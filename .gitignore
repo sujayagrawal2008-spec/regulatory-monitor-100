@@ -1,11 +1,14 @@
 # Node
 node_modules/
 
-# Local data — config.json contains credentials, so it stays ignored.
-# store.json is deliberately tracked in this repo (regulatory-monitor-100 only)
-# so Render deploys start with the already-processed corpus instead of empty.
+# Local data — both files are deliberately tracked in this repo
+# (regulatory-monitor-100 only) so Render deploys start from the
+# already-processed corpus and real subscriber list instead of empty.
+# config.json has its email.host/user/pass/enabled fields stripped —
+# SMTP_USER/SMTP_PASS are set as Render env vars instead.
 data/*
 !data/store.json
+!data/config.json
 
 # Local environment overrides
 .env

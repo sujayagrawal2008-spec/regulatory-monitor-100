@@ -1,0 +1,119 @@
+{
+  "keywords": [
+    "ECB",
+    "NCD",
+    "FPI",
+    "stamp duty",
+    "NBFC",
+    "lending",
+    "debenture",
+    "foreign portfolio",
+    "insolvency",
+    "bankruptcy",
+    "liquidation",
+    "resolution",
+    "IBC",
+    "NCLT",
+    "corporate insolvency",
+    "personal insolvency",
+    "resolution professional",
+    "commercial paper"
+  ],
+  "policies": [
+    {
+      "id": "ecb",
+      "name": "ECB Policy",
+      "department": "Treasury",
+      "keywords": [
+        "ECB",
+        "external commercial borrowing",
+        "foreign currency loan"
+      ]
+    },
+    {
+      "id": "fpi",
+      "name": "FPI & Securities Policy",
+      "department": "Compliance",
+      "keywords": [
+        "FPI",
+        "foreign portfolio",
+        "NCD",
+        "debenture",
+        "stamp duty",
+        "securities"
+      ]
+    },
+    {
+      "id": "nbfc",
+      "name": "NBFC & Lending Policy",
+      "department": "Risk",
+      "keywords": [
+        "NBFC",
+        "lending",
+        "credit",
+        "microfinance",
+        "loan",
+        "interest rate"
+      ]
+    },
+    {
+      "id": "insolvency",
+      "name": "Insolvency & IBC Policy",
+      "department": "Legal",
+      "keywords": [
+        "insolvency",
+        "bankruptcy",
+        "liquidation",
+        "resolution",
+        "IBC",
+        "NCLT",
+        "resolution professional"
+      ]
+    }
+  ],
+  "email": {
+    "port": 465,
+    "to": "",
+    "lastSendAt": "2026-09-11T12:32:50.466Z",
+    "lastSendOk": true
+  },
+  "lastScraped": "2026-09-11T12:31:51.136Z",
+  "subscribers": [
+    {
+      "id": "sub_msan87eetwi1v2",
+      "email": "sujayagrawal1999@gmail.com",
+      "keywords": [
+        "non-convertible debentures",
+        "external commercial borrowing",
+        "commercial paper"
+      ],
+      "description": "External commercial borrowing rules, Borrowing and Lending guidelines, commercial paper directions",
+      "enabled": true,
+      "createdAt": "2026-08-01T17:26:31.286Z",
+      "sentItemIds": [
+        "rbi_pr_QlNfUHJlc3NSZWxlYXNlRGlzcGxheS5hc3B4P3ByaWQ9NjMzNzhGb3JleCBpbmZsb3dzIHZpYSBGQ05SKEIpIERlcG9zaXRzLCBFeHRlcm5hbCBDb21tZXJjaWFsIEJvcnJvdw==",
+        "rbi_c_UkJJLzIwMjYtMjAyNy8yNTRBLlAuIChESVIgU2VyaWVzKSBDaXJjdWxhciBOby4gMjFSZXZpZXcgb2YgQ2lyY3VsYXJzIGlzc3VlZCB1bmRlciBGb3JlaWduIEV4Y2hhbmdlIA==",
+        "rbi_pr_QlNfUHJlc3NSZWxlYXNlRGlzcGxheS5hc3B4P3ByaWQ9NjM1MDJEYXRhIG9uIEZvcmV4IGluZmxvd3MgdmlhIEZDTlIoQikgRGVwb3NpdHMsIEV4dGVybmFsIENvbW1lcmNpYQ=="
+      ]
+    },
+    {
+      "id": "sub_mtvagtlw610awv",
+      "email": "neharikamodgil@gmail.com",
+      "keywords": [
+        "insolvency, bankruptcy, digital lending, NBFC"
+      ],
+      "description": "Any guidelines or circulars on insolvency, bankruptcy, digital lending and NBFC.",
+      "enabled": true,
+      "createdAt": "2026-09-10T08:52:10.340Z",
+      "sentItemIds": [
+        "rbi_pr_QlNfUHJlc3NSZWxlYXNlRGlzcGxheS5hc3B4P3ByaWQ9NjM1NjZSZWNvZ25pdGlvbiBvZiBTZWxmLVJlZ3VsYXRvcnkgT3JnYW5pc2F0aW9uIGluIHRoZSBGaW5UZWNoIFNlYw==",
+        "ibbi_L3VwbG9hZHMvb3JkZXIvMzFhNDdhNDgzNjRmZmE0NTY0OTA5NDIyYjEyYTQwYWEucGRmQXBwcm92YWwgb2YgUmVzb2x1dGlvbiBQbGFuIC0gQ2VudHJhbCBEZXBhcnRtZW50YQ==",
+        "ibbi_L3VwbG9hZHMvb3JkZXIvMDQxMTlhNDhmM2I2YzA4YmJhMDcyMGM0NTM0NzZlYWYucGRmQXBwcm92YWwgb2YgUmVzb2x1dGlvbiBQbGFuIC0gUmFqZXNod2FyaSBDb3RzcGluIA==",
+        "rbi_speech_QlNfU3BlZWNoZXNWaWV3LmFzcHg/SWQ9MTU3OFNoYXBpbmcgdGhlIE5leHQgRGVjYWRlIG9mIEZpbmFuY2Ug4oCTIFRlY2hub2xvZ3ksIFRydXN0IGFuZCBJbm5vdmF0aW9uIC0g",
+        "rbi_pr_QlNfUHJlc3NSZWxlYXNlRGlzcGxheS5hc3B4P3ByaWQ9NjM1ODNSQkkgaW1wb3NlcyBtb25ldGFyeSBwZW5hbHR5IG9uIEFzc2V0IENhcmUgJiBSZWNvbnN0cnVjdGlvbiBFbg==",
+        "sebi_RmluYWwgRW5xdWlyeSBPcmRlciBpbiByZXNwZWN0IG9mIE1vZGV4IEludGVybmF0aW9uYWwgU2VjdXJpdGllcyBMdGRodHRwczovL3d3dy5zZWJpLmdvdi5pbi9lbmZvcmNlbQ==",
+        "sebi_QXBwZWFsIE5vLiA3MDU0IG9mIDIwMjYgZmlsZWQgYnkgUmljaGEgS29obGlodHRwczovL3d3dy5zZWJpLmdvdi5pbi9lbmZvcmNlbWVudC9vcmRlcnMvc2VwLTIwMjYvYXBwZQ=="
+      ]
+    }
+  ]
+}
