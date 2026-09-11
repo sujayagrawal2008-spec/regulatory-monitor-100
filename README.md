@@ -1,6 +1,6 @@
 # Regulatory Monitor
 
-An AI-powered regulatory intelligence platform that aggregates circulars and notifications from RBI, SEBI, and IBBI into a single searchable interface.
+An AI-powered regulatory intelligence platform that aggregates, indexes, and cross-checks circulars, notifications, and directions from RBI, SEBI, and IBBI in one place.
 
 Built as a proof of concept by two lawyers who needed it themselves.
 
@@ -8,59 +8,61 @@ Built as a proof of concept by two lawyers who needed it themselves.
 
 ## The Problem
 
-RBI, SEBI, and IBBI publish hundreds of circulars every year across three separate portals. Official websites only allow search by document title - so a circular on debenture trustee compliance may never appear in a search for NCD compliance, even if the content is directly relevant. A research task that would ordinarily take 45–60 minutes across three portals can be completed in under 5 minutes with full-text search.
+A lot of legal work cuts across more than one regulator at once — commercial paper is governed by both RBI and SEBI; a restructuring can touch RBI, SEBI, and IBBI together. Each regulator only publishes on its own site, so there's no easy way to track or verify updates across all three, especially where subject matter overlaps. A research task that would ordinarily mean checking three separate portals by hand can be done in one search here.
+
+There's a second, sharper problem underneath that: once you're looking at an old circular or direction, it's genuinely hard to know whether it's still valid. Regulators don't always flag supersession clearly — sometimes a newer document explicitly repeals the old one, but often it just restates the same substance without ever naming what it replaces. No lawyer can be fully certain a circular hasn't been quietly superseded without manually cross-checking every later notification on the same subject — and that manual check is exactly what most practitioners don't have time for.
 
 ---
 
 ## What It Does
 
-- **Full-text search** across all indexed documents - searches inside the content of every circular, not just titles
-- **AI Intelligence Search** - ask plain English questions and get cited answers linked to the source document (RAG-based, no hallucination)
-- **Document Q&A mode** - select a specific regulation and ask questions answered strictly from that document
-- **Document Validity Checker** - for any circular/notification/direction (existing or freshly uploaded), checks whether it has been repealed or superseded. Stage 1 does deterministic regex matching against explicit repeal references (bidirectional - works regardless of which document arrives first); Stage 2 is an on-demand Claude semantic check that catches supersession by content overlap even when there's no explicit citation, and returns the matching section/clause correspondence
-- **Compliance Checker** - upload a policy/process document and check it against the indexed regulatory corpus
-- **Per-subscriber email alerts** - each subscriber sets their own keywords and/or a plain-English description of what they care about; matching is keyword-based and Claude-assisted semantic matching, run against every newly scraped document
-- **Cross-regulator filtering** - search across all three regulators simultaneously or filter by source
-- **Source verification** - every AI answer links directly to the official regulator webpage and source PDF
-- **Manual document uploads persist permanently** - the auto-scraped corpus is capped at 1,000 items (oldest scraped items age out first), but any document you manually upload is exempt from that cap and survives restarts indefinitely
+- **Cross-regulator search** — scrapes and indexes RBI, SEBI, and IBBI documents into one searchable corpus, with full-text search across document content (not just titles) and the ability to filter by regulator or search across all three at once.
+
+- **Check Validity** — a two-stage supersession checker for any circular, notification, or direction. Stage 1 does deterministic reference matching: it extracts a document's own reference number and any references it explicitly repeals, and resolves that bidirectionally against the rest of the corpus regardless of which document was added first. Stage 2 is an on-demand semantic check, using Claude to catch documents that were superseded in substance without ever being named — it flags the likely superseding document, a confidence level, and the matching section/clause correspondence.
+
+- **Email Alerts** — personalized digests, not one fixed mailing list. Each subscriber sets their own keywords and/or a plain-English description of what they care about. Matching runs on both a keyword substring match and a Claude-assisted semantic match against newly scraped documents, and every alert shows exactly *why* it matched — the specific keyword that hit, or a one-sentence reason for a semantic match.
+
+- **AI Assistant** — ask plain-English regulatory questions and get answers with citations linked directly to the source document (RAG-based, grounded in indexed content). Recency-sensitive questions are detected and answered from the newest relevant documents first, and supersession status is factored into the answer — if the most relevant document has been superseded, the assistant says so rather than presenting it as current.
+
+- **Compliance Check** — upload an internal policy or process document and check it against the indexed regulatory corpus. Findings come back tagged by severity (Critical / High / Medium) with a rationale and suggested remediation language for each, and the full report can be exported as a PDF.
+
+- **Add Document** — grow the corpus directly: paste a regulator URL or upload a PDF, and it's fetched, parsed, chunked, and indexed the same way a scraped document is. Duplicate documents are caught before ingestion (by URL, parsed reference number, or exact title match), and manually-added documents persist permanently rather than aging out.
 
 ---
 
 ## Tech Stack
 
-- **Backend:** Node.js, Express
-- **Scraping:** Cheerio (HTML parsing), pdf-parse (PDF text extraction)
-- **AI Layer:** Anthropic Claude API (claude-haiku-4-5) with custom RAG pipeline - powers summaries, AI Assistant chat, Document Q&A, Compliance Checker, and Validity Checker Stage 2
-- **Chunking:** Custom - 500–800 words per chunk, 100-word overlap, lexical/IDF-weighted retrieval (no embeddings)
-- **Reference extraction:** Custom regex patterns for RBI/SEBI/IBBI reference-number formats, with bidirectional repeal-reference resolution across the store
-- **Concurrency:** In-process async mutex around store.json read-modify-write cycles to prevent lost updates between concurrent scrapes, uploads, and background backfill jobs
-- **Scheduling:** node-cron (scrape every 2 hours), plus self-rescheduling background backfill jobs for chunking and reference extraction on the existing corpus
-- **Alerts:** Nodemailer with Gmail SMTP, per-subscriber recipient list (not a single fixed address)
-- **Frontend:** HTML, CSS, JavaScript
+- **Backend:** Node.js + Express, in a single `server.js` file — no framework beyond Express, no build step
+- **Storage:** Flat JSON files (`data/store.json`, `data/config.json`) — no database
+- **AI:** Anthropic Claude API — powers semantic subscriber matching, the RAG-based AI Assistant, Compliance Check analysis, and Check Validity's Stage 2 semantic supersession check
+- **Retrieval:** Custom lexical/IDF-weighted chunk scoring — no embeddings
+- **Scraping:** Cheerio for HTML parsing, pdf-parse for PDF text extraction
+- **Email:** Nodemailer, per-subscriber SMTP delivery
+- **Frontend:** Plain HTML, CSS, and JavaScript — no framework
 
 ---
 
 ## Current Limitations
 
-This is a proof of concept. Known limitations:
+This is a proof of concept, not production software:
 
-- Dataset is a curated sample (~1000 auto-scraped documents across RBI, SEBI, IBBI, plus any manually uploaded documents) - not a full scrape
-- Document Validity Checker's Stage 1 regex patterns are tuned primarily for RBI reference formats; SEBI/IBBI matching is best-effort
-- Email alert delivery not fully automated
-- No mobile-optimised interface
-- AI search accuracy depends on chunk retrieval quality - not production-ready
+- **Not production-ready** — built by two lawyers, not engineers, for their own use first.
+- **The public demo deployment runs a curated ~100-document sample**, sized to fit free-tier hosting memory limits. The full pipeline has been built and tested locally against 1,000+ real documents — scaling the deployed instance to the full dataset is an infrastructure step (a bigger instance, a persistent disk, or a real database), not a redesign.
+- **No persistent disk on the free-tier deployment** — production use at real scale would need an actual database, not flat JSON files.
+- **Compliance Check needs further validation against expert review** before any lawyer should rely on its output as-is.
+- **Flat-file storage means no multi-user support** in its current form — it's built around a single shared corpus and configuration file, not per-user accounts or permissions.
 
 ---
 
 ## Running Locally
 
 ```bash
-git clone https://github.com/sujayagrawal2008-spec/regulatory-monitor.git
-cd regulatory-monitor
+git clone https://github.com/sujayagrawal2008-spec/regulatory-monitor-100.git
+cd regulatory-monitor-100
 npm install
 ```
 
-Set environment variables:
+Set environment variables (see the table below for the full list — at minimum, you need `ANTHROPIC_API_KEY` for AI features):
 
 ```bash
 export ANTHROPIC_API_KEY="your-key-here"
@@ -72,18 +74,20 @@ Start the server:
 npm start
 ```
 
-Open `http://localhost:3000` in your browser.
+Open `http://localhost:3000` in your browser. Every route — including the frontend itself — is gated behind HTTP Basic Auth, so you'll also need `DEMO_USER`/`DEMO_PASSWORD` set before anything loads.
 
----
+### Environment variables
 
-## Recent Changes (Sep 10–11, 2026)
-
-- **Email Alerts** — Preview block is now fully static (no backend dependency, renders even with the server stopped), the delivery-settings panel is collapsed by default, and digest emails now include a "Why this matched" line showing the actual matched keyword or Claude's one-sentence semantic-match reason.
-- **Ask feature** — Recency-sensitive questions (e.g. "latest," "current") are now detected and candidate documents are sorted newest-first; supersession status is injected into the retrieval context so answers about a superseded circular are phrased as uncertain rather than stated as current fact.
-- **Check Validity** — Two-stage supersession checking: Stage 1 runs deterministic regex extraction of a document's own reference number and any references it explicitly repeals, matched bidirectionally against the rest of the corpus regardless of ingestion order; Stage 2 is an on-demand Claude semantic check for supersession by content overlap when there's no explicit citation.
-- **Compliance Check** — Findings are now tagged with a severity tier (Critical / High / Medium) with a rationale and suggested remediation, and the exported PDF report is color-coded and sorted by severity.
-- **Add Document reliability** — Manual URL/PDF ingestion now reuses the same fetch/extraction logic as the scraper (including detection of SEBI pages that embed the actual document as a PDF inside an iframe rather than in the page HTML), and duplicate documents are now caught before ingestion by URL, parsed reference number, or exact title match.
-- **Source citations** — "Sources cited" in Ask answers now render as clickable links consistently (matching Check Validity's citation style); citation lists are deduplicated by document ID.
+| Variable | Required? | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Yes, for AI features | Powers summaries, the AI Assistant, Compliance Check, and Check Validity's Stage 2 semantic check |
+| `DEMO_USER` / `DEMO_PASSWORD` | Yes | HTTP Basic Auth credentials gating every route, including the static frontend |
+| `SMTP_ENABLED` | For email alerts | Set to `true` to enable sending |
+| `SMTP_HOST` / `SMTP_PORT` | Optional | Defaults to `smtp.gmail.com` / `465` |
+| `SMTP_USER` / `SMTP_PASS` | For email alerts | Sender Gmail address and Gmail App Password (not your real password) |
+| `DATA_DIR` | Optional | Path to a persistent disk mount, if one is attached. Defaults to `./data`, which is ephemeral without one |
+| `APP_URL` | Optional | Public URL used in email footer links — set this explicitly in production, it isn't auto-detected |
+| `SKIP_STARTUP_SCRAPE` | Optional | Set to `true` on memory-constrained deployments to skip the startup scrape, the periodic scrape, and background backfill jobs, and just serve the existing store as-is |
 
 ---
 
