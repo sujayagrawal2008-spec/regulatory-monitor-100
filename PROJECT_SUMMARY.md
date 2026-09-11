@@ -1,64 +1,34 @@
 # Regulatory Monitor — Project Summary
 
+> Deeper technical reference — repo structure, data schemas, and internals. See [README.md](README.md) for what the platform does and how to use it.
+
 > Last updated: September 2026
 > Status: **Fully operational**
 
 ---
 
-## 1. What This Project Does
-
-**Regulatory Monitor** is a local web application that automatically tracks new circulars,
-notifications, press releases, and other publications from three Indian financial regulators:
-
-| Source | What is scraped |
-|---|---|
-| **RBI** — Reserve Bank of India | Circulars, Press Releases, Notifications, Master Directions, Master Circulars, Speeches |
-| **SEBI** — Securities and Exchange Board of India | Circulars, Press Releases, Consultation Papers, Speeches & Public Notices |
-| **IBBI** — Insolvency and Bankruptcy Board of India | All publications from the homepage ticker (Press Releases, Circulars, Orders, Discussion Papers, Notifications, Regulations, Agenda/Minutes) |
-
-Every 2 hours the server fetches all three sources, identifies new items it has not seen before,
-stores them, and emails every subscriber whose keywords or saved interest description match.
-
-For each newly discovered document, **Anthropic Claude** (`claude-haiku-4-5`) downloads the full PDF
-or HTML text and produces:
-- A **plain English summary** of what the document says and what a lawyer needs to know
-- **In-document keyword excerpts** — the actual sentence from inside the document where each
-  of the user's saved keywords appears
-- Indexed chunks for retrieval-augmented search (AI Assistant chat, Document Q&A, Compliance Checker)
-- **Stage 1 reference extraction** — what reference number this document has, and what earlier
-  reference numbers (if any) it explicitly repeals/supersedes
-
-Beyond scraping and alerting, the app also has an on-demand **Document Validity Checker**: pick
-any indexed document (or upload a new PDF) and check whether it's still active, been explicitly
-repealed (Stage 1, regex-based, instant), or been superseded in substance by a later document even
-without an explicit citation (Stage 2, Claude semantic check, run on demand).
-
-The application runs entirely on `localhost` (or optionally on Render for a public URL).
-No database, no Python, no build step — all storage is local JSON files.
-
-**Primary user:** A legal or compliance professional who needs to stay on top of regulatory
-publications relevant to their practice areas without manually visiting each regulator's website.
-
----
-
-## 2. File Structure
+## 1. File Structure
 
 ```
-G:\Legal AI\
+regulatory-monitor-100\
 │
 ├── server.js               # Express backend — all scraping, AI, scheduling, API, email
-├── package.json            # npm dependencies
-├── package-lock.json       # Locked dependency versions
-├── .gitignore              # Excludes data/, node_modules/, .env
-├── .env.example            # Documents every environment variable required
-├── PROJECT_SUMMARY.md      # This file
+├── package.json             # npm dependencies
+├── package-lock.json        # Locked dependency versions
+├── .gitignore                # Excludes node_modules/, .env; data/store.json and
+│                              # data/config.json are deliberately tracked in this repo
+├── .env.example              # Documents every environment variable required
+├── README.md                  # What the platform does and how to use it
+├── PROJECT_SUMMARY.md          # This file
 │
 ├── public\
-│   └── index.html          # Complete frontend — single-file, no framework, no build step
+│   └── index.html            # Complete frontend — single-file, no framework, no build step
 │
-└── data\                   # Created automatically on first run; excluded from git
-    ├── store.json          # All scraped + manually-uploaded items, chunks, and list of every seen item ID
-    └── config.json         # Saved keywords, per-subscriber alert list, and email SMTP sender settings
+└── data\
+    ├── store.json            # Scraped + manually-uploaded items, chunks, and list of every seen item ID
+    └── config.json            # Saved keywords, per-subscriber alert list, and email SMTP sender settings
+                                 # (email.host/user/pass are stripped from the tracked copy — set via
+                                 # SMTP_* env vars in deployment instead)
 ```
 
 ### `server.js` — internal sections
@@ -79,13 +49,13 @@ G:\Legal AI\
 | `capStoreItems()` | Caps auto-scraped items at 1,000 (oldest first); items with `addedManually: true` are always kept regardless of count |
 | `withStoreLock()` | In-process async mutex serialising `store.json` read-modify-write cycles across concurrent scrapes/uploads/backfills; only the final merge+write is locked, slow network I/O happens outside it |
 | `collapseHorizontalWhitespace()` / `fetchFullTextForItem()` | Extraction pass that preserves newlines (unlike the fully-collapsed `fullText` used for AI/chunking) so Stage 1 regex can see table/paragraph structure |
-| `parseOwnReference()` / `extractRepealReferences()` / `resolveReferencesForItem()` | Document Validity Checker Stage 1: find this doc's own reference number(s), find what it explicitly repeals, bidirectionally match against every other item in the store |
-| `findSupersessionCandidates()` / `checkContentSupersession()` / `runStage2Check()` | Document Validity Checker Stage 2: retrieve same-source later-dated candidates via the existing chunk scoring, ask Claude to judge content supersession and cite matching sections |
+| `parseOwnReference()` / `extractRepealReferences()` / `resolveReferencesForItem()` | Check Validity Stage 1: find this doc's own reference number(s), find what it explicitly repeals, bidirectionally match against every other item in the store |
+| `findSupersessionCandidates()` / `checkContentSupersession()` / `runStage2Check()` | Check Validity Stage 2: retrieve same-source later-dated candidates via the existing chunk scoring, ask Claude to judge content supersession and cite matching sections |
 | `backfillReferencesBatch()` / `scheduleReferenceBackfill()` | Background job applying Stage 1 to the pre-existing corpus, 7 items per batch, self-rescheduling; permanently-failing items are marked `refExtractionFailed` so they don't retry forever |
 | `matchSubscriberKeywords()` / Claude-assisted description matching | Per-subscriber alert matching: keyword substring match or semantic match against a subscriber's free-text description |
 | `buildSubscriberEmailHtml()` / `dispatchSubscriberAlerts()` | Constructs and sends one branded HTML email per matching subscriber (source badges, type, date, links) |
 | `runScrape()` | Full scrape cycle: fetch all sources → deduplicate → cap via `capStoreItems()` → Claude analysis → Stage 1 reference resolution → `dispatchSubscriberAlerts()` |
-| `ingestDocument()` | Shared ingestion path for manual URL/PDF uploads (including Validity Checker uploads) — sets `addedManually: true`, runs Claude analysis, chunking, and Stage 1 inline |
+| `ingestDocument()` | Shared ingestion path for manual URL/PDF uploads (including Check Validity uploads) — sets `addedManually: true`, runs Claude analysis, chunking, and Stage 1 inline |
 | `GET /api/items` | Returns paginated items; supports `source`, `keywords`, `page`, `limit` query params |
 | `GET /api/config` | Returns keywords and masked email config |
 | `PUT /api/config` | Saves updated keywords or email settings |
@@ -97,11 +67,11 @@ G:\Legal AI\
 | `GET /api/log` | Returns last 50 scrape log entries |
 | `GET /api/stats` | Returns `{total, rbi, sebi, ibbi, seen, lastScraped}` |
 | `POST /api/test-email` | Sends a test email using up to 3 real stored items |
-| cron | `node-cron` schedule `0 */2 * * *` — fires at the top of every even hour |
+| cron | `node-cron` schedule `0 */2 * * *` — fires at the top of every even hour (skipped entirely when `SKIP_STARTUP_SCRAPE=true`) |
 
 ---
 
-## 3. Data Schemas
+## 2. Data Schemas
 
 ### `data/store.json`
 
@@ -130,15 +100,18 @@ G:\Legal AI\
         "analyzedAt": "2026-06-06T14:10:45.123Z"
       }
     }
+  ],
+  "chunks": [
+    { "parentId": "rbi_c_<base64>", "text": "...", "index": 0 }
   ]
 }
 ```
 
 **`seenIds`** — flat array of every item ID ever fetched. An item in this list will never be
-emailed again, even if it is re-fetched. This is the sole deduplication mechanism.
+emailed again, even if it is re-fetched. This is the sole deduplication mechanism for scraping.
 
-**`ai`** — present only on items that were new during a scrape when `GROQ_API_KEY` was set.
-Items scraped without the key have no `ai` field; they show no summary on the dashboard.
+**`ai`** — present once Claude analysis has run on an item (inline for new items during a scrape,
+or via the background chunk-backfill job for older ones).
 
 Items also carry (once Stage 1/2 processing has run):
 
@@ -156,7 +129,7 @@ Items also carry (once Stage 1/2 processing has run):
 }
 ```
 
-`addedManually: true` is set on any document added via URL, PDF upload, or the Validity Checker's
+`addedManually: true` is set on any document added via URL, PDF upload, or Check Validity's
 upload flow — these items are **exempt from the 1,000-item cap** and are never evicted, even
 across restarts. Only auto-scraped items are capped, oldest-first.
 
@@ -170,35 +143,41 @@ across restarts. Only auto-scraped items are capped, oldest-first.
     "insolvency", "bankruptcy", "liquidation", "resolution", "IBC",
     "NCLT", "personal insolvency", "resolution professional"
   ],
+  "policies": [
+    { "id": "ecb", "name": "ECB Policy", "department": "Treasury", "keywords": ["ECB", "external commercial borrowing"] }
+  ],
   "subscribers": [
     {
       "id": "sub_abc123",
       "email": "user@example.com",
       "keywords": ["NBFC", "stamp duty"],
       "description": "Anything relevant to debenture trustee compliance",
-      "createdAt": "..."
+      "enabled": true,
+      "createdAt": "...",
+      "sentItemIds": ["rbi_c_abc123"]
     }
   ],
   "email": {
-    "enabled": true,
-    "host":    "smtp.gmail.com",
-    "port":    465,
-    "user":    "sender@gmail.com",
-    "pass":    "app-password-here"
+    "port": 465,
+    "to": "",
+    "lastSendAt": "...",
+    "lastSendOk": true
   },
   "lastScraped": "2026-06-06T14:10:56.527Z"
 }
 ```
 
-Email credentials in this file are overridden by `SMTP_*` environment variables when set — this is
-the **sender** account only. Alert **recipients** are the `subscribers` array, each with their own
-keyword list and/or free-text description; matching is keyword substring match OR a Claude semantic
-match against the description, run per newly-scraped item during each scrape cycle. There is no
-single fixed recipient anymore (the old `email.to` / `SMTP_TO` field has been removed).
+`email.host`/`email.user`/`email.pass`/`email.enabled` are intentionally absent from the tracked
+copy of this file — those are set via `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`/`SMTP_ENABLED` env vars
+in deployment instead, so no credential sits in the repo. Locally, `getEmailConfig()` falls back
+to these file fields when the env vars aren't set — see `server.js:98`. Alert **recipients** are
+the `subscribers` array, each with their own keyword list and/or free-text description; matching
+is a keyword substring match OR a Claude semantic match against the description, run per
+newly-scraped item during each scrape cycle.
 
 ---
 
-## 4. Features — Complete List
+## 3. Features — Complete List
 
 ### Scraping
 
@@ -222,7 +201,9 @@ all content rows below it, until the next date row.
 
 SEBI `sid=3` is excluded — confirmed to be an internal application processing queue.
 SEBI Orders, Regulations and Informal Guidance are not accessible (JavaScript-rendered pages
-return empty HTML when fetched server-side).
+return empty HTML when fetched server-side). Some SEBI detail pages embed the actual document
+as a PDF inside an `iframe[src*="file="]` rather than in the page's own HTML —
+`fetchFullTextForItem()` detects this and extracts the PDF URL from the iframe `src`.
 
 **IBBI (homepage SPA, 2025+ only):**
 - All content lives in `<ul class="activityTicker">` on the homepage
@@ -231,21 +212,24 @@ return empty HTML when fetched server-side).
   Agenda/Minutes, Regulation, Notice
 - Items older than 2025 are excluded to keep the list manageable
 
-**Total items scraped in a typical run: ~981**
-(RBI: ~466 · SEBI: ~100 · IBBI: ~415)
-
 ### Scheduling
 
 - Cron fires at `0 */2 * * *` — top of every even hour (00:00, 02:00, 04:00…)
 - First scrape runs 2 seconds after server start
 - "Scrape Now" button in the dashboard header triggers an immediate scrape
+- Both the startup scrape and the periodic cron scrape (plus the post-boot chunk/reference
+  backfill jobs) are skipped entirely when `SKIP_STARTUP_SCRAPE=true` — used on the memory-
+  constrained Render deployment, which serves a fixed curated corpus rather than live-scraping
 
 ### Deduplication
 
 - Each item gets a stable ID: `source_type_base64(url+title).slice(0,100)`
 - All seen IDs are written to `store.json → seenIds` permanently
 - On each scrape, only items whose ID is not in `seenIds` are treated as new
-- New items are stored and eligible for Groq analysis and email alerts
+- Manual URL/PDF ingestion additionally runs three duplicate checks before storing: exact URL
+  match, parsed-reference-number match, and exact normalised-title match (`findDuplicateByTitle()`)
+  — the last one catches the same document added twice via different ingestion paths (e.g.
+  upload vs. URL-paste), which can't collide on URL or reference number alone
 - Historical items (already seen) are never re-emailed
 
 ### Claude AI Analysis
@@ -261,7 +245,7 @@ uploaded/added via URL, and in the background chunk-backfill job for older items
 2. Extract text — PDFs processed with `pdf-parse`; HTML stripped of nav/script/footer then text extracted with cheerio. A lightly-normalised, line-preserving variant of the same text is also captured for Stage 1 reference/repeal regex extraction (table/paragraph structure is destroyed by the fully-collapsed text used for AI/chunking, so this is a separate pass).
 3. **Keyword excerpts** — `extractExcerpts()` searches the full untruncated text for each of the user's saved keywords. For each keyword found, it extracts the sentence window around the first match (±200 chars, trimmed to sentence boundaries).
 4. **Claude summary** — text sent to `claude-haiku-4-5` with a legal-assistant system prompt, returns a plain English summary as JSON.
-5. **Chunking** — text split into 500–800 word chunks with 100-word overlap and indexed for the lexical/IDF-weighted retrieval that powers AI Assistant chat, Document Q&A, and Compliance Checker.
+5. **Chunking** — text split into 500–800 word chunks with 100-word overlap and indexed for the lexical/IDF-weighted retrieval that powers the AI Assistant and Compliance Check.
 6. **Stage 1 reference extraction** — `parseOwnReference()` finds this document's own reference number(s); `extractRepealReferences()` scans for explicit repeal/supersession language and pulls out what it repeals; `resolveReferencesForItem()` then does a bidirectional match against every other item in the store (works regardless of which of the two related documents was ingested first).
 7. Result stored in `item.ai = { summary, excerpts, analyzedAt }` plus the `refInfo`/`repeals`/`supersession` fields described above.
 
@@ -281,7 +265,8 @@ corpus — items that permanently fail (e.g. an oversized PDF or a blocked exter
 **Layout:** Sticky header + 260px sidebar + main content area.
 
 **Sidebar:**
-- Stat cards: Showing / Total / RBI / SEBI / IBBI counts
+- Stat cards: Showing / Total / RBI / SEBI / IBBI counts, plus a "Curated demo corpus" note
+  that appears automatically when the total item count is small (≤ 200)
 - Source filter buttons: All / RBI / SEBI / IBBI
 - Keyword manager: saved keyword tags (click to filter), add/remove keywords, changes persist immediately
 - Scrape log: last 5 scrape entries with fetched/new/matched counts
@@ -294,7 +279,7 @@ corpus — items that permanently fail (e.g. an oversized PDF or a blocked exter
 
 **Item card contents (top to bottom):**
 1. Clickable document title (links to source website)
-2. Groq 3-sentence summary (italic, left-bordered — only on AI-analysed items)
+2. Claude summary (italic, left-bordered — only on AI-analysed items)
 3. "📄 Found in document" section — keyword chip + highlighted excerpt from document text (only when keywords were found inside the full document text)
 4. Meta row: source badge (RBI amber / SEBI blue / IBBI green), type badge, date, keyword match badges, fetch time
 
@@ -304,15 +289,19 @@ corpus — items that permanently fail (e.g. an oversized PDF or a blocked exter
   and/or a free-text description of what they care about — there is no single fixed recipient.
 - Matching per subscriber per new item: keyword substring match on title/text, **or** a Claude
   semantic match of the item against the subscriber's description (batched per scrape cycle).
+- Each matched item carries a `whyMatched: {matchType, detail}` value — the actual matched
+  keyword(s), or the one-sentence reason the semantic-match Claude call already returned (no
+  second LLM call needed) — rendered as a "💡 Why this matched" line in the digest email.
 - Sends HTML email via Nodemailer, one email per matching subscriber, with a branded header and
   a table of matching items (source badge, type, date, clickable title).
-- Email footer links to the live app URL (uses `APP_URL` env var; set this manually on Render).
+- Email footer links to the live app URL (uses `APP_URL` env var — set this explicitly in
+  deployment, it isn't auto-detected).
 - Subscribers can be added/edited/removed via `/api/subscribers` CRUD endpoints; a "Send Test"
   action per subscriber uses up to 3 real stored items.
 - Only fires for items that are both (a) new this scrape and (b) match a given subscriber's
   keywords or description.
 
-### Document Validity Checker
+### Check Validity
 
 Answers "is this document still in force?" for any indexed document or a freshly uploaded PDF.
 
@@ -335,66 +324,31 @@ Answers "is this document still in force?" for any indexed document or a freshly
   the superseding document's title/date/source/type with a clickable link to its original source,
   a mechanism badge (explicit reference vs. content match), and section citations for content matches.
 
----
+### Compliance Check
 
-## 5. Tech Stack
+- Upload an internal policy/process PDF; it's compared against the indexed regulatory corpus.
+- Findings come back as `compliant` (plain statements, no severity) and `nonCompliant`/`missing`
+  findings, each tagged with a severity (`Critical`/`High`/`Medium`), a rationale, and a suggested
+  remediation.
+- The full report can be exported as a PDF, color-coded and sorted by severity
+  (`SEVERITY_PDF_COLOR`, `SEVERITY_ORDER` in `server.js`).
 
-| Layer | Technology | Version |
-|---|---|---|
-| Runtime | Node.js | v24.16.0 |
-| Web framework | Express | ^4.18.2 |
-| HTML scraping | Cheerio | ^1.0.0 |
-| HTTP client | Axios | ^1.6.2 |
-| PDF text extraction | pdf-parse | ^1.1.1 |
-| File uploads | multer | ^2.1.1 |
-| AI inference | @anthropic-ai/sdk | ^0.102.0 |
-| AI model | claude-haiku-4-5 (Anthropic) | — |
-| Scheduling | node-cron | ^3.0.3 |
-| Email | Nodemailer | ^6.9.7 |
-| CORS | cors | ^2.8.5 |
-| Frontend | Plain HTML + Vanilla JS | — |
-| Storage | Local JSON files | — |
+### Ask (AI Assistant)
 
-No database. No build tool. No frontend framework. The entire UI is one `index.html` file.
-
----
-
-## 6. Environment Variables
-
-All variables are optional for local development (the app falls back to `config.json` values).
-On Render or any cloud host, set these in the dashboard.
-
-| Variable | Required? | Description |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | **Yes, for AI features** | Anthropic API key starting with `sk-ant-`. Get one at https://console.anthropic.com/settings/keys. Powers summaries, AI Assistant chat, Document Q&A, Compliance Checker, and Validity Checker Stage 2. The user runs their own server with this key set in their own terminal session — it is never pasted into chat. |
-| `DEMO_USER` | **Yes, for public deployment** | Username for the HTTP Basic Auth gate that sits in front of every route, including the static frontend. |
-| `DEMO_PASSWORD` | **Yes, for public deployment** | Password for the same Basic Auth gate. |
-| `SMTP_ENABLED` | Optional | Set to `true` to enable email alerts (overrides config.json) |
-| `SMTP_HOST` | Optional | SMTP server hostname, e.g. `smtp.gmail.com` |
-| `SMTP_PORT` | Optional | SMTP port, e.g. `465` for SSL |
-| `SMTP_USER` | Optional | Sender email address / SMTP username |
-| `SMTP_PASS` | Optional | SMTP password or Gmail App Password |
-| `DATA_DIR` | Optional | Path to data directory. Set to your Render persistent disk's mount path if you've added one (e.g. `/data`). Defaults to `./data`, which is ephemeral on Render without a disk. |
-| `PORT` | Set by Render | Render injects this automatically. Do not set manually on Render. |
-| `APP_URL` | Optional | Public URL of the app (used in email footer links). Set this manually to your `https://<service>.onrender.com` URL — Render does not auto-populate an equivalent to Railway's old `RAILWAY_PUBLIC_DOMAIN`, so without it, footer links fall back to `http://localhost:<port>`. |
-
-### Gmail setup
-
-Use a **Gmail App Password** (not your real password):
-1. Enable 2-Step Verification on your Google account
-2. Go to: Google Account → Security → App Passwords
-3. Create a new app password — copy the 16-character code
-4. Use `smtp.gmail.com`, port `465`, your Gmail address, and the app password
-
-### Local `.env` file (optional)
-
-Create `G:\Legal AI\.env` (excluded from git via `.gitignore`) and put your variables there.
-The app does not load `.env` automatically — you set env vars in your shell or use PowerShell
-as shown below. The `.env.example` file documents all available variables.
+- RAG-based Q&A over the indexed corpus, citing source documents directly.
+- Recency-sensitive questions (matched via `RECENCY_QUERY_RE`) sort candidate documents
+  newest-first before retrieval.
+- Supersession status is injected into the retrieval context (`supersessionContextLine()`) and
+  into the synthesis prompt, so an answer about a superseded document is phrased as uncertain
+  rather than stated as current fact.
+- A superseding document mentioned in the answer text but not already cited is added to the
+  citation list as a deterministic backstop; the final citation list is deduplicated by document ID.
+- "Sources cited" render as clickable links whenever the underlying document has a URL, matching
+  Check Validity's citation style.
 
 ---
 
-## 7. How to Start the Server (Windows)
+## 4. How to Start the Server (Windows)
 
 ### Standard start (each new PowerShell session)
 
@@ -402,15 +356,19 @@ as shown below. The `.env.example` file documents all available variables.
 # If Node.js is not on PATH yet (needed when PATH wasn't set at install time):
 $env:PATH = "C:\Program Files\nodejs;" + $env:PATH
 
-# Set Groq API key for this session:
-$env:GROQ_API_KEY = "gsk_your_key_here"
+# Set required env vars for this session — see README.md for the full list:
+$env:ANTHROPIC_API_KEY = "sk-ant-your-key-here"
+$env:DEMO_USER = "your-username"
+$env:DEMO_PASSWORD = "your-password"
 
-# Navigate and start:
-cd "G:\Legal AI"
+# Navigate to the cloned repo and start:
+cd path\to\regulatory-monitor-100
 node server.js
 ```
 
-Open **http://localhost:3000** in a browser.
+Open **http://localhost:3000** in a browser — every route, including the frontend itself, is
+gated behind HTTP Basic Auth, so it will prompt for the `DEMO_USER`/`DEMO_PASSWORD` credentials
+before loading anything.
 
 ### Stop the server
 
@@ -424,7 +382,7 @@ Stop-Process -Name "node" -Force
 
 ```powershell
 $env:PATH = "C:\Program Files\nodejs;" + $env:PATH
-cd "G:\Legal AI"
+cd path\to\regulatory-monitor-100
 npm install
 node server.js
 ```
@@ -432,59 +390,15 @@ node server.js
 ### Reset all scraped data (fresh start)
 
 ```powershell
-# Clears all stored items and seen IDs — next scrape treats everything as new
-'{"seenIds":[],"items":[]}' | Out-File -FilePath "G:\Legal AI\data\store.json" -Encoding utf8
+# Clears all stored items, chunks, and seen IDs — next scrape treats everything as new.
+# -Encoding ascii avoids a UTF-8 BOM that would otherwise corrupt the JSON on read.
+'{"seenIds":[],"items":[],"chunks":[]}' | Out-File -FilePath "data\store.json" -Encoding ascii
 ```
 
 ---
 
-## 8. Render Deployment
+## 5. Possible Future Enhancements
 
-Render is the current deploy target (this repo previously targeted Railway; `railway.json` and
-that setup have been removed).
-
-**One-time setup steps:**
-
-1. Push code to GitHub (credentials excluded via `.gitignore`)
-2. Create a new **Web Service** on Render → connect the GitHub repo
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Set environment variables in the Render dashboard (see Section 6) — at minimum
-   `ANTHROPIC_API_KEY` and `DEMO_USER`/`DEMO_PASSWORD` (required now that Basic Auth gates every
-   route). Set `APP_URL` to the `https://<service>.onrender.com` URL Render assigns once the first
-   deploy completes.
-6. (Optional) Add a Render **persistent disk** if you want `data/store.json` and `data/config.json`
-   to survive redeploys and restarts — without one, Render's filesystem is ephemeral and all
-   scraped/uploaded data resets on every deploy. If added, set `DATA_DIR` to the disk's mount path.
-
-Render runs the Node.js process continuously; `node-cron` inside the process fires the scraper
-every 2 hours automatically. No separate worker or cron service needed.
-
-Early history (initial commit through the Groq→Claude switch and first AI features) is summarised
-above; run `git log --oneline` for the full, current commit history. The repo is connected to
-`https://github.com/sujayagrawal2008-spec/regulatory-monitor` on branch `master`.
-
----
-
-## 9. Known Issues and Limitations
-
-| Issue | Detail |
-|---|---|
-| **RBI Press Release dates missing** | The RBI press release listing page has no date column. Items show no date on the dashboard. Fetching dates would require one HTTP request per press release (~71 extra requests per scrape). Not implemented. |
-| **RBI shows current financial year only** | `BS_CircularIndexDisplay.aspx` shows only the current year's circulars (2026-27). Prior years are on separate pages not currently scraped. |
-| **SEBI capped at ~25 items per section** | SEBI's DataTable returns one page of results. Only the most recent ~25 items per category are fetched. Pagination not implemented. |
-| **SEBI Orders/Regulations inaccessible** | SEBI's Orders, Regulations, and Informal Guidance pages are JavaScript-rendered and return empty HTML when fetched server-side. Cannot be scraped with Cheerio. |
-| **Claude analyses only ~20 new items inline per scrape** | The rest are picked up asynchronously by the background chunk/reference backfill jobs, which self-reschedule until the whole store is covered — so full coverage lags a live scrape rather than being immediate. |
-| **Excerpts only for future new items** | Keyword excerpts are generated at scrape time using keywords saved at that moment. If you add a new keyword later, old items will not retroactively get excerpts for it. |
-| **No auto-restart on machine reboot** | No process manager (PM2, Windows Task Scheduler, etc.) is configured. If the machine or terminal restarts, you must manually run `node server.js` again (with `ANTHROPIC_API_KEY` set in that session). |
-| **Stage 1 reference regex tuned for RBI** | SEBI/IBBI reference-number formats are matched best-effort; explicit repeal detection is most reliable for RBI documents. |
-| **`@google/generative-ai` and `groq-sdk` still in dependencies** | Both were used by earlier AI integrations, now fully replaced by `@anthropic-ai/sdk`. They remain in `package.json` but are unused. Safe to remove with `npm uninstall @google/generative-ai groq-sdk`. |
-
----
-
-## 10. Possible Future Enhancements
-
-- [ ] Remove unused `@google/generative-ai` and `groq-sdk` dependencies
 - [ ] Add SEBI pagination to fetch full history per category
 - [ ] Scrape prior-year RBI circulars via year-specific URLs
 - [ ] Add date extraction for RBI Press Releases
@@ -494,14 +408,5 @@ above; run `git log --oneline` for the full, current commit history. The repo is
 - [ ] Export filtered results to CSV
 - [ ] Re-run Claude analysis on demand for a specific item
 - [ ] Retroactive excerpt generation when new keywords are added
-- [ ] Extend Stage 1 validity-checker regex coverage for SEBI/IBBI reference formats
-- [ ] Connect to GitHub and push to a hosting platform for a live public URL
-
----
-
-## 11. Recent Changes (Sep 10–11, 2026)
-
-- **Email Alerts** — Preview block in the Email Alerts tab is now fully static frontend content with no backend dependency (verifiable with the server stopped); delivery-settings panel is collapsed by default; digest emails now include a "Why this matched" line, combining `matchesSubscriberKeywords()`'s actual matched keyword(s) and/or the one-sentence reason already returned by the semantic-match Claude call — no second LLM call added.
-- **Ask feature recency/supersession awareness** — Recency-sensitive queries are detected via keyword pattern; candidate documents are sorted newest-first for those queries; supersession status is injected into the RAG context and into the synthesis prompt so a low-confidence supersession is phrased as uncertain rather than asserted; a deterministic backstop ensures a superseding document mentioned in the answer text is also included in the citation list.
-- **Add Document reliability fixes** — Manual URL/PDF ingestion (`ingestDocument()`) now reuses `fetchFullTextForItem()`, the same extraction function the scraper uses, instead of separate fetch logic; this function now also detects SEBI pages that embed the real document as a PDF inside an `iframe[src*="file="]` rather than in the page's own HTML. Three duplicate checks run before ingestion: exact URL match, parsed-reference-number match, and exact normalised-title match (`findDuplicateByTitle()`) — the last one catches the same document added twice via different ingestion paths (e.g. upload vs. URL-paste), which can't collide on URL or reference number alone.
-- **Source citation fixes** — "Sources cited" in Ask answers render as clickable links whenever the underlying document has a URL (matching Check Validity's citation style), rather than falling back to plain text based on document type; the citation list is deduplicated by document ID as a defense-in-depth measure against the same document being cited twice.
+- [ ] Extend Stage 1 Check Validity regex coverage for SEBI/IBBI reference formats
+- [ ] Scale the deployed instance to the full 1,000+ document corpus (bigger instance and/or a real database, not flat JSON)
