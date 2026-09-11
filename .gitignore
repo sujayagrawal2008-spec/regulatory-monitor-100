@@ -1,9 +1,11 @@
 # Node
 node_modules/
 
-# Local data — store.json and config.json contain credentials and scraped data.
-# In production these live on a mounted persistent disk, not in the repo.
-data/
+# Local data — config.json contains credentials, so it stays ignored.
+# store.json is deliberately tracked in this repo (regulatory-monitor-100 only)
+# so Render deploys start with the already-processed corpus instead of empty.
+data/*
+!data/store.json
 
 # Local environment overrides
 .env
