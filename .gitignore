@@ -1,0 +1,31 @@
+# Node
+node_modules/
+
+# Local data — store.json and config.json contain credentials and scraped data.
+# In production these live on a mounted persistent disk, not in the repo.
+data/
+
+# Local environment overrides
+.env
+.env.local
+
+# Dev utility scripts (safe to delete)
+debug_ibbi.js
+probe_all.js
+debug.js
+sample.js
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+# Server run logs (local debugging only)
+server*.log
+
+# Unrelated scratch project accidentally nested in this folder
+AI-assistent-sunhacks/

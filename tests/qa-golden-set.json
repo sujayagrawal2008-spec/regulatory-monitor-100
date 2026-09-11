@@ -1,0 +1,128 @@
+{
+  "_readme": [
+    "Golden test set for the /api/ask endpoint's recency + supersession awareness.",
+    "Every entry has a 'verified' field. New entries default to verified:false until a",
+    "human (not Claude) has independently checked the expected_document/evidence against",
+    "the actual source document and flipped it to true. run-qa-tests.js only counts",
+    "verified:true cases toward pass/fail — unverified cases are reported separately as",
+    "informational only, specifically so a plausible-sounding but wrong expectation can",
+    "never silently grade itself as correct.",
+    "Tiers: 1 = human-confirmed ground truth, 2 = simple single-document lookups (cheap to",
+    "eyeball, self-verified), 3 = new recency/supersession/not-in-corpus cases — these MUST",
+    "ship as verified:false with an evidence field citing the specific section/date/reference",
+    "the expectation is based on, never self-certified as true, because this tier is exactly",
+    "the category the original bug came from."
+  ],
+  "cases": [
+    {
+      "id": "t1-consortium-lending",
+      "tier": 1,
+      "category": "supersession",
+      "question": "What are the latest RBI guidelines on lending under consortium arrangements and multiple banking arrangements?",
+      "expected_document": "Reserve Bank of India (Commercial Banks - Transfer and Distribution of Credit Risk) Directions, 2025",
+      "must_not_center_on": "Lending under Consortium Arrangement/Multiple Banking Arrangements",
+      "verified": true
+    },
+    {
+      "id": "t1-sfb-dividend",
+      "tier": 1,
+      "category": "supersession",
+      "question": "Is the November 2025 circular on Small Finance Banks' prudential norms for declaration of dividends still valid?",
+      "expected_document": "Reserve Bank of India (Small Finance Banks – Prudential Norms on Declaration of Dividend) Directions, 2026",
+      "must_not_center_on": "Reserve Bank of India (Small Finance Banks – Prudential Norms on  Declaration of Dividends) Directions, 2025",
+      "verified": true
+    },
+    {
+      "id": "t2-fema-ecb-withdrawal",
+      "tier": 2,
+      "category": "single_document",
+      "question": "Which RBI circular withdrew old FEMA circulars relating to External Commercial Borrowings?",
+      "expected_document": "Review of Circulars issued under Foreign Exchange Management Act, 1999 (FEMA)",
+      "verified": true
+    },
+    {
+      "id": "t2-sebi-debenture-trustees",
+      "tier": 2,
+      "category": "single_document",
+      "question": "What does SEBI's Debenture Trustees Regulations, 1993 govern?",
+      "expected_document": "Securities and Exchange Board of India (Debenture Trustees) Regulations, 1993",
+      "verified": true
+    },
+    {
+      "id": "t2-ibbi-voluntary-liquidation",
+      "tier": 2,
+      "category": "single_document",
+      "question": "What did the IBBI's Second Amendment to the Voluntary Liquidation Process Regulations, 2026 change?",
+      "expected_document": "IBBI (Voluntary Liquidation Process) (Second Amendment) Regulations, 2026",
+      "verified": true
+    },
+    {
+      "id": "t2-sebi-jindal-insider-trading",
+      "tier": 2,
+      "category": "single_document",
+      "question": "What was SEBI's order regarding suspected insider trading in Jindal Steel and Power Limited shares?",
+      "expected_document": "Adjudication Order in the matter of insider trading activity of an entity in the scrip of Jindal Steel and Power Limited",
+      "verified": true
+    },
+    {
+      "id": "t3-rrb-deposit-rate-latest",
+      "tier": 3,
+      "category": "recency",
+      "question": "What is the latest amendment to RBI's Regional Rural Banks Interest Rate on Deposits directions?",
+      "expected_document": "Reserve Bank of India (Regional Rural Banks – Interest Rate on Deposits) Third Amendment Directions, 2026",
+      "must_not_center_on": "Reserve Bank of India (Regional Rural Banks – Interest Rate on Deposits) Second Amendment Directions, 2026",
+      "verified": false,
+      "evidence": "store.json: 'Second Amendment Directions, 2026' has ref RBI/2026-2027/216DOR.SOG(SPE).REC.180/13.03.00/2026-27 dated 30.7.2026; 'Third Amendment Directions, 2026' has ref RBI/2026-2027/246DOR.SOG(SPE).REC.213/13.03.00/2026-27 dated 25.8.2026 — later calendar date and a higher REC sequence number (180 -> 213) within the same DOR.SOG(SPE) series, consistent with Third Amendment being the later/current one. I have not read the actual PDF text of either document, only their scraped metadata."
+    },
+    {
+      "id": "t3-commercial-banks-governance-current",
+      "tier": 3,
+      "category": "recency",
+      "question": "What is the current version of RBI's Commercial Banks Governance amendment directions?",
+      "expected_document": "Reserve Bank of India (Commercial Banks – Governance) Third Amendment Directions, 2026",
+      "must_not_center_on": "Reserve Bank of India (Commercial Banks – Governance) Amendment Directions, 2026",
+      "verified": false,
+      "evidence": "store.json: the unnumbered 'Amendment Directions, 2026' has ref RBI/2026-2027/177DOR.HGG.GOV.150/29.67.001/2026-27 dated 14.7.2026; 'Third Amendment Directions, 2026' has ref RBI/DOR/2026-2027/206DOR.ACC.REC.No.183/29.67.001/2026-27 dated 30.7.2026 — later date. CAVEAT: I could not find a 'Second Amendment' copy of this exact title in the store, so the scraped version history for this document may be incomplete — flagging that gap rather than asserting it isn't."
+    },
+    {
+      "id": "t3-payments-banks-governance-still-current",
+      "tier": 3,
+      "category": "recency",
+      "question": "Is RBI's Payments Banks Governance Amendment Directions, 2026 dated 14 July 2026 still the current version?",
+      "expected_document": "Reserve Bank of India (Payments Banks – Governance) Third Amendment Directions, 2026",
+      "must_not_center_on": "Reserve Bank of India (Payments Banks – Governance) Amendment Directions, 2026",
+      "verified": false,
+      "evidence": "store.json: 14 July 2026 version ref RBI/2026-2027/179DOR.HGG.GOV.152/29.67.001/2026-27; a 'Third Amendment Directions, 2026' exists dated 30.7.2026, ref RBI/DOR/2026-2027/208DOR.ACC.REC.No.186/29.67.001/2026-27 — later date, so the 14 July version is very likely no longer current. Same caveat as the previous case: no 'Second Amendment' copy found in store for this exact title."
+    },
+    {
+      "id": "t3-sfb-deposit-rate-latest",
+      "tier": 3,
+      "category": "recency",
+      "question": "What is the latest amendment to RBI's Small Finance Banks Interest Rate on Deposits directions?",
+      "expected_document": "Reserve Bank of India (Small Finance Banks – Interest Rate on Deposits) Third Amendment Directions, 2026",
+      "must_not_center_on": "Reserve Bank of India (Small Finance Banks – Interest Rate on Deposits) Second Amendment Directions, 2026",
+      "verified": false,
+      "evidence": "store.json: 'Second Amendment Directions, 2026' ref RBI/2026-2027/215DOR.SOG(SPE).REC.178/13.03.00/2026-27 dated 30.7.2026; 'Third Amendment Directions, 2026' ref RBI/2026-2027/244DOR.SOG(SPE).REC.212/13.03.00/2026-27 dated 25.8.2026 — later date, higher REC number (178 -> 212), same series as the RRB case above."
+    },
+    {
+      "id": "t3-irdai-not-in-corpus",
+      "tier": 3,
+      "category": "not_in_corpus",
+      "question": "What does IRDAI's latest circular say about surrender value regulations for life insurance?",
+      "expected_document": null,
+      "expect_not_found": true,
+      "verified": false,
+      "evidence": "Checked data/store.json directly: zero items with source IRDAI, zero titles matching /irdai|insurance regulatory/i. server.js only defines scrapeRBI()/scrapeSEBI()/scrapeIBBI() — there is no IRDAI scraper at all, so this platform cannot have ingested any IRDAI document. Expected behavior: the answer should say this isn't covered/found, not fabricate an IRDAI circular."
+    },
+    {
+      "id": "t3-crypto-not-in-corpus",
+      "tier": 3,
+      "category": "not_in_corpus",
+      "question": "What is RBI's latest regulation on virtual digital assets and cryptocurrency exchanges?",
+      "expected_document": null,
+      "expect_not_found": true,
+      "verified": false,
+      "evidence": "Checked data/store.json directly: zero items (out of 1017) match /crypto|virtual digital asset/i, including within RBI's own corpus. Expected behavior: the answer should say no such RBI document was found in the indexed corpus, not synthesize a plausible-sounding but non-existent 'latest RBI crypto circular.'"
+    }
+  ]
+}

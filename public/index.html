@@ -1,0 +1,2480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regulatory Monitor — RBI · SEBI · IBBI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    summary::-webkit-details-marker { display: none; }
+    summary::marker { content: ""; }
+    details[open] .cc-chevron { transform: rotate(90deg); }
+
+    :root {
+      /* Base surfaces */
+      --bg:       #09090b;
+      --surface:  #111115;
+      --surface2: #17171d;
+      --surface3: #1e1e28;
+
+      /* Borders */
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.13);
+
+      /* Accents — indigo / violet pair */
+      --accent:     #818cf8;
+      --accent-dim: rgba(129,140,248,0.11);
+      --accent2:    #a78bfa;
+      --accent2-dim:rgba(167,139,250,0.11);
+
+      /* Status */
+      --green:  #22c55e;
+      --yellow: #eab308;
+      --red:    #f87171;
+
+      /* Text */
+      --text:   #f4f4f5;
+      --text-2: #a1a1aa;
+      --text-3: #52525b;
+
+      /* Kept as --muted alias for legacy references */
+      --muted: #52525b;
+
+      /* Source colours */
+      --rbi:      #f59e0b;
+      --rbi-dim:  rgba(245,158,11,0.12);
+      --sebi:     #60a5fa;
+      --sebi-dim: rgba(96,165,250,0.12);
+      --ibbi:     #34d399;
+      --ibbi-dim: rgba(52,211,153,0.12);
+
+      /* Radii */
+      --r:    10px;
+      --r-sm: 6px;
+      --r-lg: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: rgba(9,9,11,0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .logo span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #lastScraped { font-size: 12px; color: var(--text-3); font-weight: 500; }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 2.5px rgba(34,197,94,0.18);
+      animation: pulse 2.5s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    /* ── Layout ── */
+    .main {
+      display: grid;
+      grid-template-columns: 252px 1fr;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+      overflow-y: auto;
+    }
+
+    .sidebar-section h3 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--text-3);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    /* ── Stat cards ── */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .stat-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .stat-card .num {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-card .lbl {
+      font-size: 10px;
+      color: var(--text-3);
+      margin-top: 4px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .stat-card.rbi  .num { color: var(--rbi); }
+    .stat-card.sebi .num { color: var(--sebi); }
+    .stat-card.ibbi .num { color: var(--ibbi); }
+
+    /* ── Source filter ── */
+    .source-btns { display: flex; flex-direction: column; gap: 2px; }
+    .src-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--r-sm);
+      padding: 8px 10px;
+      color: var(--text-2);
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .src-btn:hover { background: var(--surface2); color: var(--text); }
+    .src-btn.active {
+      background: var(--accent-dim);
+      border-color: rgba(129,140,248,0.22);
+      color: var(--accent);
+    }
+    .src-btn .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Keywords ── */
+    .keyword-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+
+    .kw-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      font-weight: 500;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+    }
+    .kw-tag:hover { border-color: rgba(129,140,248,0.4); color: var(--text); }
+    .kw-tag.active {
+      background: var(--accent-dim);
+      border-color: rgba(129,140,248,0.3);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .kw-tag button {
+      background: none; border: none;
+      color: var(--text-3);
+      cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
+    }
+    .kw-tag button:hover { color: var(--red); }
+
+    .kw-input-row { display: flex; gap: 6px; }
+    .kw-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 6px 10px;
+      color: var(--text);
+      font-size: 12.5px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .kw-input::placeholder { color: var(--text-3); }
+    .kw-input:focus { border-color: rgba(129,140,248,0.45); }
+
+    /* ── Buttons ── */
+    .btn {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--r-sm);
+      padding: 7px 14px;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: inherit;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: opacity .15s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: .82; }
+    .btn:disabled { opacity: .38; cursor: default; }
+    .btn.secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+    }
+    .btn.secondary:hover { color: var(--text); border-color: var(--border-hi); opacity: 1; }
+    .btn.small { padding: 5px 11px; font-size: 11.5px; }
+    .btn.purple { background: var(--accent2); }
+
+    /* ── Email config ── */
+    .email-form { display: flex; flex-direction: column; gap: 10px; }
+    .form-row { display: flex; flex-direction: column; gap: 4px; }
+    .form-row label { font-size: 10.5px; color: var(--text-3); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+    .form-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 8px 11px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      width: 100%;
+      transition: border-color .15s;
+    }
+    .form-input::placeholder { color: var(--text-3); }
+    .form-input:focus { border-color: rgba(129,140,248,0.45); }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-2);
+      font-weight: 500;
+    }
+    .toggle { position: relative; display: inline-block; width: 38px; height: 22px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer;
+      inset: 0; background: var(--surface3);
+      border: 1px solid var(--border-hi);
+      border-radius: 22px; transition: .2s;
+    }
+    .slider::before {
+      content: ''; position: absolute;
+      width: 15px; height: 15px;
+      left: 3px; bottom: 3px;
+      background: var(--text-3);
+      border-radius: 50%; transition: .2s;
+    }
+    input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+    input:checked + .slider::before { transform: translateX(16px); background: #fff; }
+
+    /* ── Scrape log ── */
+    .log-list { display: flex; flex-direction: column; gap: 4px; }
+    .log-entry {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 7px 10px;
+      font-size: 11.5px;
+      color: var(--text-3);
+      display: flex;
+      gap: 10px;
+    }
+    .log-entry .log-time  { color: var(--text-2); font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .log-entry .log-match { color: var(--green); font-weight: 600; }
+
+    /* ── Content area ── */
+    .content { padding: 24px 28px; display: flex; flex-direction: column; gap: 18px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .tab {
+      padding: 9px 16px;
+      cursor: pointer;
+      color: var(--text-3);
+      border-bottom: 2px solid transparent;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all .15s;
+      margin-bottom: -1px;
+      letter-spacing: -0.01em;
+    }
+    .tab:hover { color: var(--text-2); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── Top bar ── */
+    .top-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 9px 14px 9px 38px;
+      color: var(--text);
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search-wrap input::placeholder { color: var(--text-3); }
+    .search-wrap input:focus { border-color: var(--border-hi); }
+    .search-icon {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3); pointer-events: none; font-size: 15px;
+    }
+    .count-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 5px 12px;
+      color: var(--text-3);
+      font-size: 12.5px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ── Active filter ── */
+    .filter-active {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(129,140,248,0.2);
+      border-radius: var(--r-sm);
+      padding: 5px 12px;
+      font-size: 12.5px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .filter-active button {
+      background: none; border: none; color: var(--accent);
+      cursor: pointer; font-size: 16px; line-height: 1; padding: 0; opacity: .65;
+    }
+    .filter-active button:hover { opacity: 1; }
+
+    /* ── Items list ── */
+    .items-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .item-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color .2s, box-shadow .2s;
+      animation: fadeIn .2s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:none} }
+    .item-card:hover {
+      border-color: var(--border-hi);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
+    }
+
+    .item-title {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+    }
+    .item-title a { color: inherit; text-decoration: none; }
+    .item-title a:hover { color: var(--accent); }
+
+    .item-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .03em;
+    }
+    .badge.rbi   { background: var(--rbi-dim);    color: var(--rbi); }
+    .badge.sebi  { background: var(--sebi-dim);   color: var(--sebi); }
+    .badge.ibbi  { background: var(--ibbi-dim);   color: var(--ibbi); }
+    .badge.type  { background: var(--surface2);   color: var(--text-3); border: 1px solid var(--border); }
+    .badge.kw    { background: var(--accent-dim); color: var(--accent); }
+
+    .item-date    { font-size: 11.5px; color: var(--text-3); font-weight: 500; }
+    .item-fetched { font-size: 11px; color: var(--text-3); margin-left: auto; }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 10px; }
+
+    /* ── Empty / loading ── */
+    .empty { text-align: center; padding: 64px 20px; color: var(--text-3); }
+    .empty .big { font-size: 40px; margin-bottom: 12px; }
+    .spinner {
+      width: 30px; height: 30px;
+      border: 2px solid var(--surface3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 48px auto;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r);
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 9999;
+      display: none;
+      max-width: 320px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    #toast.show { display: block; animation: slideUp .2s ease; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+    mark {
+      background: rgba(129,140,248,0.2);
+      color: var(--accent);
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    /* ── Chat panel ── */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid rgba(129,140,248,0.18);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      height: 540px;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(129,140,248,0.12);
+      background: linear-gradient(90deg, rgba(129,140,248,0.07) 0%, transparent 100%);
+      flex-shrink: 0;
+    }
+    .chat-header-title {
+      flex: 1;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--accent);
+    }
+    .chat-clear-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 3px 10px;
+      color: var(--text-3);
+      font-size: 10.5px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: color .14s, border-color .14s;
+    }
+    .chat-clear-btn:hover { color: var(--text-2); border-color: var(--border-hi); }
+    .chat-clear-btn.active {
+      color: var(--accent); border-color: rgba(129,140,248,0.45);
+      background: rgba(129,140,248,0.1);
+    }
+
+    .chat-doc-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px;
+      border-bottom: 1px solid rgba(129,140,248,0.12);
+      background: rgba(129,140,248,0.05);
+      flex-shrink: 0;
+    }
+    .chat-doc-select {
+      flex: 1; min-width: 0;
+      background: var(--bg); border: 1px solid var(--border-hi);
+      border-radius: var(--r-sm);
+      padding: 6px 10px; color: var(--text); font-size: 12.5px; font-family: inherit;
+      outline: none; cursor: pointer;
+    }
+    .chat-doc-select:focus { border-color: rgba(129,140,248,0.5); }
+
+    /* Scrollable message area */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      scroll-behavior: smooth;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+    /* Empty-state starters */
+    .chat-starters {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex: 1;
+      padding: 10px 0 4px;
+      text-align: center;
+    }
+    .chat-starters-icon { font-size: 30px; opacity: .35; line-height: 1; }
+    .chat-starters-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
+    .chat-starters-chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 520px; }
+    .chat-starter-chip {
+      background: var(--surface2); border: 1px solid var(--border-hi);
+      border-radius: 20px; padding: 6px 14px;
+      color: var(--text-2); font-size: 11.5px; font-family: inherit;
+      cursor: pointer; transition: background .14s, color .14s, border-color .14s;
+      text-align: left; line-height: 1.4;
+    }
+    .chat-starter-chip:hover { background: var(--accent-dim); border-color: rgba(129,140,248,0.38); color: var(--accent); }
+
+    /* Chat rows */
+    .chat-row { display: flex; gap: 9px; align-items: flex-end; }
+    .chat-row.user { flex-direction: row-reverse; }
+
+    .chat-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0; user-select: none;
+    }
+    .chat-row.ai   .chat-avatar { background: var(--accent-dim); color: var(--accent); }
+    .chat-row.user .chat-avatar { background: rgba(167,139,250,0.15); color: var(--accent2); }
+
+    .chat-bubble {
+      max-width: 78%;
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 13.5px;
+      line-height: 1.68;
+      overflow-wrap: break-word;
+    }
+    .chat-row.user .chat-bubble {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-row.ai .chat-bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Typing dots */
+    .chat-typing { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+    .chat-typing span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-3); animation: chatBounce 1.1s ease-in-out infinite;
+    }
+    .chat-typing span:nth-child(2) { animation-delay: .18s; }
+    .chat-typing span:nth-child(3) { animation-delay: .36s; }
+    @keyframes chatBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: .45; }
+      30%            { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* AI bubble footer */
+    .chat-bubble-footer {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 10px; color: var(--text-3); border-top: 1px solid var(--border); padding-top: 7px; margin-top: 2px;
+    }
+    .chat-copy-btn {
+      background: transparent; border: none; padding: 0;
+      color: var(--text-3); font-size: 10px; font-family: inherit;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 3px;
+    }
+    .chat-copy-btn:hover { color: var(--accent); }
+
+    /* Sources inside AI bubble */
+    .chat-sources { display: flex; flex-direction: column; gap: 5px; }
+    .chat-source-item {
+      background: var(--surface3); border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 6px 10px;
+      display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+    }
+    .chat-source-item a { color: var(--accent); text-decoration: none; font-size: 11.5px; line-height: 1.4; }
+    .chat-source-item a:hover { text-decoration: underline; }
+
+    /* Response-type badge */
+    .ask-query-type-badge {
+      font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .ask-query-type-badge.narrative { background: var(--accent-dim); color: var(--accent); }
+    .ask-query-type-badge.table     { background: rgba(52,211,153,0.12); color: #34d399; }
+    .ask-query-type-badge.list      { background: rgba(96,165,250,0.12); color: #60a5fa; }
+
+    /* Structured table output */
+    .ask-table-wrap { overflow-x: auto; border-radius: var(--r-sm); border: 1px solid var(--border); }
+    .ask-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .ask-table th {
+      background: var(--surface3); color: var(--text-2);
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+      padding: 8px 12px; text-align: left; white-space: nowrap;
+    }
+    .ask-table td { padding: 8px 12px; color: var(--text); border-top: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+    .ask-table tr:hover td { background: var(--surface2); }
+
+    /* Structured list output */
+    .ask-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+    .ask-list li { display: flex; gap: 9px; align-items: baseline; font-size: 13px; color: var(--text); line-height: 1.55; }
+    .ask-list li::before { content: '›'; color: var(--accent); font-weight: 700; flex-shrink: 0; font-size: 14px; }
+
+    /* Input bar */
+    .chat-input-bar {
+      display: flex; gap: 8px; padding: 12px 14px;
+      border-top: 1px solid rgba(129,140,248,0.12);
+      background: var(--surface);
+      flex-shrink: 0; align-items: flex-end;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--bg); border: 1px solid var(--border-hi);
+      border-radius: var(--r); padding: 10px 14px;
+      color: var(--text); font-size: 13.5px; font-family: inherit;
+      resize: none; outline: none; line-height: 1.5;
+      max-height: 120px; overflow-y: auto;
+      transition: border-color .15s;
+    }
+    .chat-input::placeholder { color: var(--text-3); }
+    .chat-input:focus { border-color: rgba(129,140,248,0.5); }
+    .chat-send-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; border-radius: var(--r);
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; cursor: pointer; flex-shrink: 0;
+      transition: opacity .15s;
+    }
+    .chat-send-btn:hover { opacity: .85; }
+    .chat-send-btn:disabled { opacity: .35; cursor: default; }
+    .ask-error { color: var(--red); font-size: 13px; font-weight: 500; }
+
+    /* ── AI summary ── */
+    .ai-summary {
+      font-size: 12.5px;
+      color: var(--text-2);
+      line-height: 1.6;
+      font-style: italic;
+      border-left: 2px solid var(--border-hi);
+      padding-left: 10px;
+    }
+
+    /* ── Keyword excerpts ── */
+    .excerpt-section {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+    }
+    .excerpt-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); margin-bottom: 2px; }
+    .excerpt-item { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+    .excerpt-kw { font-size: 10.5px; font-weight: 600; color: var(--accent); background: var(--accent-dim); padding: 1px 8px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; }
+    .excerpt-text { font-size: 12px; color: var(--text-2); line-height: 1.55; }
+
+    /* ── Card list (shared: subscriber cards) ── */
+    .policy-grid { display: flex; flex-direction: column; gap: 10px; }
+    .policy-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 12px;
+      transition: border-color .2s;
+    }
+    .policy-card:hover { border-color: var(--border-hi); }
+    .policy-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .policy-card-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+    .policy-dept-badge { font-size: 10px; padding: 2px 9px; border-radius: 10px; background: var(--accent2-dim); color: var(--accent2); font-weight: 600; }
+    .policy-kw-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .policy-kw-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 2px 10px; font-size: 11px; color: var(--text-2); display: flex; align-items: center; gap: 4px; font-weight: 500; }
+    .policy-kw-chip button { background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
+    .policy-kw-chip button:hover { color: var(--red); }
+    .policy-kw-add { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .policy-kw-input { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 5px 10px; color: var(--text); font-size: 12px; font-family: inherit; outline: none; width: 140px; transition: border-color .15s; }
+    .policy-kw-input:focus { border-color: rgba(167,139,250,0.45); }
+    .policy-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Focus-visible ring (P0 accessibility fix) ── */
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    /* Suppress outline on mouse clicks; show only on keyboard navigation */
+    :focus:not(:focus-visible) { outline: none; }
+
+    /* ── Harden: long strings never break layouts ── */
+    .item-title      { overflow-wrap: break-word; word-break: break-word; }
+    .policy-card-title { overflow-wrap: break-word; word-break: break-word; }
+    .kw-tag          { max-width: 180px; }
+    .kw-tag span     { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ask-answer-text { overflow-wrap: break-word; }
+
+    /* ── Tab semantics: button reset ── */
+    .tab {
+      background: none;
+      border: none;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* ── Scrape button "in progress" state ── */
+    #scrapeBtn[data-scraping="true"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      cursor: not-allowed;
+    }
+
+    /* ── Sidebar section divider for visual breathing room ── */
+    .sidebar-section + .sidebar-section {
+      border-top: 1px solid var(--border);
+      padding-top: 26px;
+    }
+
+    /* ── Empty-state icon ── */
+    .empty .big { opacity: .5; }
+    .empty strong { color: var(--text-2); }
+
+    /* ── Ask section: label with subtle icon separation ── */
+    .ask-label { display: flex; align-items: center; gap: 6px; }
+
+    @media (max-width: 768px) {
+      .main { grid-template-columns: 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+      .content { padding: 16px; }
+      .chat-input-bar { padding: 10px 12px; }
+      .chat-bubble { max-width: 92%; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">⚖️</div>
+    Regulatory <span>Monitor</span>
+  </div>
+  <div class="header-right">
+    <div class="status-dot" title="Live"></div>
+    <span id="lastScraped">—</span>
+    <button class="btn small" id="scrapeBtn" onclick="triggerScrape()">↻ Scrape Now</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- Stats -->
+    <div class="sidebar-section">
+      <h3>Overview</h3>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="num" id="statVisible">—</div>
+          <div class="lbl">Showing</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="statTotal">—</div>
+          <div class="lbl">Total</div>
+        </div>
+        <div class="stat-card rbi">
+          <div class="num" id="statRBI">—</div>
+          <div class="lbl">RBI</div>
+        </div>
+        <div class="stat-card sebi">
+          <div class="num" id="statSEBI">—</div>
+          <div class="lbl">SEBI</div>
+        </div>
+        <div class="stat-card ibbi" style="grid-column:span 2">
+          <div class="num" id="statIBBI">—</div>
+          <div class="lbl">IBBI</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source filter -->
+    <div class="sidebar-section">
+      <h3>Filter by Source</h3>
+      <div class="source-btns" role="group" aria-label="Filter by regulator">
+        <button class="src-btn active" data-src="ALL" onclick="setSource('ALL',this)" aria-pressed="true">
+          <span class="dot" style="background:var(--text-3)"></span> All Sources
+        </button>
+        <button class="src-btn" data-src="RBI" onclick="setSource('RBI',this)" aria-pressed="false">
+          <span class="dot" style="background:var(--rbi)"></span> RBI
+        </button>
+        <button class="src-btn" data-src="SEBI" onclick="setSource('SEBI',this)" aria-pressed="false">
+          <span class="dot" style="background:var(--sebi)"></span> SEBI
+        </button>
+        <button class="src-btn" data-src="IBBI" onclick="setSource('IBBI',this)" aria-pressed="false">
+          <span class="dot" style="background:var(--ibbi)"></span> IBBI
+        </button>
+      </div>
+    </div>
+
+    <!-- Keywords -->
+    <div class="sidebar-section">
+      <h3>Alert Keywords</h3>
+      <div class="keyword-list" id="kwList" aria-label="Saved keywords — click to filter"></div>
+      <div class="kw-input-row">
+        <input class="kw-input" id="kwInput" placeholder="e.g. FEMA, SARFAESI…"
+               aria-label="Add keyword"
+               onkeydown="if(event.key==='Enter') addKeyword()">
+        <button class="btn small" onclick="addKeyword()" aria-label="Add keyword">Add</button>
+      </div>
+    </div>
+
+    <!-- Add Document -->
+    <div class="sidebar-section">
+      <h3>Add Document</h3>
+      <div class="kw-input-row">
+        <input class="kw-input" id="docUrlInput" placeholder="Paste an RBI / SEBI / IBBI URL…"
+               aria-label="Document URL"
+               onkeydown="if(event.key==='Enter') addDocumentFromUrl()">
+        <button class="btn small" id="docUrlBtn" onclick="addDocumentFromUrl()" aria-label="Add document from URL">Add</button>
+      </div>
+      <div style="margin-top:8px">
+        <input type="file" id="docFileInput" accept="application/pdf,.pdf" style="display:none" onchange="onDocFileChosen(event)">
+        <button class="btn small secondary" style="width:100%" onclick="document.getElementById('docFileInput').click()">⇪ Upload PDF from computer</button>
+      </div>
+      <div id="docUploadForm" style="display:none;margin-top:10px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm)">
+        <div style="font-size:11.5px;color:var(--text-3);margin-bottom:6px" id="docFileName"></div>
+        <input class="kw-input" id="docTitleInput" placeholder="Document title" style="width:100%;margin-bottom:6px;box-sizing:border-box">
+        <select class="kw-input" id="docSourceInput" style="width:100%;margin-bottom:6px;box-sizing:border-box">
+          <option value="">Select source…</option>
+          <option value="RBI">RBI</option>
+          <option value="SEBI">SEBI</option>
+          <option value="IBBI">IBBI</option>
+        </select>
+        <input class="kw-input" id="docDateInput" placeholder="Date (e.g. 05 Jun 2026)" style="width:100%;margin-bottom:8px;box-sizing:border-box">
+        <div style="display:flex;gap:6px">
+          <button class="btn small purple" id="docUploadSubmitBtn" onclick="submitDocumentUpload()">Save document</button>
+          <button class="btn small secondary" onclick="cancelDocUpload()">Cancel</button>
+        </div>
+      </div>
+      <div id="docStatusMsg" style="font-size:11.5px;margin-top:8px;display:none"></div>
+    </div>
+
+
+    <!-- Scrape log -->
+    <div class="sidebar-section">
+      <h3>Activity</h3>
+      <div class="log-list" id="scrapeLog" aria-live="polite" aria-label="Recent scrape activity">
+        <div style="color:var(--text-3);font-size:12px">No activity yet</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- AI Chat -->
+    <div class="chat-panel" role="region" aria-label="Regulatory AI Chat">
+      <div class="chat-header">
+        <span style="font-size:15px;line-height:1" aria-hidden="true">⚖️</span>
+        <span class="chat-header-title">✦ AI Assistant · Intelligence Search</span>
+        <button class="chat-clear-btn" id="chatModeToggleBtn" onclick="chatToggleMode()"
+                aria-label="Switch between General Search and Document Q&amp;A modes"
+                title="General Search: searches across the whole database. Document Q&amp;A: answers strictly from one document you pick.">
+          ⇄ Document Q&amp;A
+        </button>
+        <button class="chat-clear-btn" onclick="chatClear()" aria-label="Start a new conversation, clearing all memory">+ New Conversation</button>
+      </div>
+      <div class="chat-doc-bar" id="chatDocBar" style="display:none">
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);flex-shrink:0">📄 Document Q&amp;A</span>
+        <select id="chatDocSelect" class="chat-doc-select" onchange="chatOnDocSelect()" aria-label="Choose a document to ask questions about">
+          <option value="">Select an uploaded document…</option>
+        </select>
+        <span id="chatDocStatus" style="font-size:11px;color:var(--text-3)"></span>
+      </div>
+      <div class="chat-messages" id="chatMessages" aria-live="polite" aria-label="Chat conversation">
+        <!-- starters injected by JS -->
+      </div>
+      <div class="chat-input-bar">
+        <textarea class="chat-input" id="chatInput" rows="1"
+          placeholder="Ask about any regulation, circular, or policy change…"
+          aria-label="Type your message"
+          oninput="_chatAutoResize(this)"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend();}"></textarea>
+        <button class="chat-send-btn" id="chatSendBtn" onclick="chatSend()" aria-label="Send message">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Main navigation">
+      <button class="tab active" role="tab" aria-selected="true"  aria-controls="tab-feed"     onclick="switchTab('feed',this)">Documents</button>
+      <button class="tab"        role="tab" aria-selected="false" aria-controls="tab-email"     onclick="switchTab('email',this)">Email Alerts</button>
+      <button class="tab"        role="tab" aria-selected="false" aria-controls="tab-compliance" onclick="switchTab('compliance',this)">Compliance Check</button>
+      <button class="tab"        role="tab" aria-selected="false" aria-controls="tab-validity"   onclick="switchTab('validity',this)">Check Validity</button>
+    </div>
+
+    <!-- Feed tab -->
+    <div class="tab-pane active" id="tab-feed" role="tabpanel">
+
+      <div class="top-bar">
+        <div class="search-wrap">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input type="search" id="searchInput"
+                 aria-label="Search circulars by title"
+                 placeholder="Search circulars and notifications…"
+                 oninput="debounceSearch()">
+        </div>
+        <div class="count-badge" id="countBadge" aria-live="polite">0 items</div>
+      </div>
+
+      <!-- Active filter indicator -->
+      <div id="filterBar" style="display:none" role="status">
+        <div class="filter-active">
+          <span>Filtered by <strong id="filterLabel"></strong></span>
+          <button onclick="clearActiveKeyword()" aria-label="Clear filter">×</button>
+        </div>
+      </div>
+
+      <div id="itemsContainer" aria-live="polite" aria-label="Regulatory documents">
+        <div class="spinner" role="status" aria-label="Loading…"></div>
+      </div>
+
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- Email tab -->
+    <div class="tab-pane" id="tab-email" role="tabpanel">
+      <div style="max-width:560px">
+        <h2 style="font-size:16px;font-weight:700;color:var(--text);margin:0 0 6px">Email Alerts</h2>
+        <p style="color:var(--text-2);margin-bottom:16px;font-size:13px;line-height:1.6">
+          Subscribers receive a personalized digest of new documents matching their interests.
+          Alerts run automatically every 2 hours.
+        </p>
+        <div style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Preview</div>
+        <!-- Static, hardcoded content — no fetch, no JS driving this block. Mirrors one
+             specific real alert exactly as sent (verified against the actual received
+             email), so the demo never depends on the server being up. -->
+        <div style="margin-bottom:24px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="background:var(--surface2);padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.7">
+            <div><span style="color:var(--text-3)">From:</span> <span style="color:var(--text)">Regulatory Monitor &lt;sujayagrawal1999@gmail.com&gt;</span></div>
+            <div><span style="color:var(--text-3)">Subject:</span> <span style="color:var(--text)">Heads up, Sujay - new RBI circular on external commercial borrowing</span></div>
+            <div style="color:var(--text-3)">08 Sep 2026</div>
+          </div>
+          <div style="background:#f9fafb;padding:24px 20px">
+            <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);font-family:'Segoe UI',Arial,sans-serif">
+              <div style="background:#1a1d27;padding:20px 28px;display:flex;align-items:center">
+                <span style="font-size:20px;margin-right:10px">⚖️</span>
+                <span style="color:#ffffff;font-size:17px;font-weight:700">Regulatory Monitor</span>
+              </div>
+              <div style="padding:24px 28px">
+                <p style="color:#374151;margin:0 0 4px;font-size:14px">Hi there,</p>
+                <p style="color:#374151;margin:0 0 18px;font-size:14px;line-height:1.5">
+                  RBI just published something that looks relevant to what you're tracking — flagged because it touches on <strong>external commercial borrowing</strong>, which is one of your alert topics.
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb">
+                  <tr>
+                    <td style="padding:14px 0;border-bottom:1px solid #e5e7eb;vertical-align:top">
+                      <div style="margin-bottom:6px">
+                        <span style="display:inline-block;background:#fef3c7;color:#d97706;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.04em;margin-right:6px">RBI</span>
+                        <span style="display:inline-block;background:#f3f4f6;color:#6b7280;font-size:11px;padding:2px 8px;border-radius:10px">Circular</span>
+                        <span style="color:#9ca3af;font-size:12px;margin-left:8px">📅 08 Sep 2026</span>
+                      </div>
+                      <div style="margin-bottom:6px">
+                        <a href="https://www.rbi.org.in/Scripts/BS_CircularIndexDisplay.aspx?Id=13696" style="color:#1d4ed8;font-size:14px;font-weight:500;text-decoration:none;line-height:1.4">Review of Circulars issued under Foreign Exchange Management Act, 1999 (FEMA)</a>
+                      </div>
+                      <div style="color:#9ca3af;font-size:11px;font-family:monospace">RBI/2026-2027/254A.P. (DIR Series) Circular No. 21</div>
+                      <div style="color:#6b7280;font-size:12px;margin-top:6px;font-style:italic">
+                        💡 Why this matched: external commercial borrowing (keyword)
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+                <p style="color:#374151;margin:16px 0 0;font-size:14px">Worth a look if this touches any live matters.</p>
+              </div>
+              <div style="background:#f9fafb;padding:12px 28px;font-size:11px;color:#b0b5bd;border-top:1px solid #e5e7eb">
+                Sent by Regulatory Monitor · Scrapes RBI, SEBI &amp; IBBI every 2 hours ·
+                <a href="http://localhost:3000" style="color:#9ca3af">Open dashboard</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:480px">
+        <div class="email-form">
+          <div class="toggle-row">
+            <span>Enable alerts</span>
+            <label class="toggle" aria-label="Toggle email alerts">
+              <input type="checkbox" id="emailEnabled" onchange="saveEmail()">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <details id="deliverySettingsDetails" style="margin-top:2px">
+            <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;padding:10px 0;border-top:1px solid var(--border)">
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);font-weight:600">
+                <span class="cc-chevron" style="display:inline-block;transition:transform .15s;font-size:10px">▸</span>
+                Delivery settings
+              </span>
+            </summary>
+            <div style="padding-top:12px">
+              <div class="form-row">
+                <label for="emailHost">SMTP host</label>
+                <input class="form-input" id="emailHost" placeholder="smtp.gmail.com" autocomplete="off" onchange="saveEmail()">
+              </div>
+              <div class="form-row">
+                <label for="emailPort">Port</label>
+                <input class="form-input" id="emailPort" placeholder="465" type="number" onchange="saveEmail()">
+              </div>
+              <div class="form-row">
+                <label for="emailUser">Sender address</label>
+                <input class="form-input" id="emailUser" placeholder="sender@gmail.com" type="email" autocomplete="username" onchange="saveEmail()">
+              </div>
+              <div class="form-row">
+                <label for="emailPass">App password</label>
+                <input class="form-input" id="emailPass" type="password" placeholder="Gmail app password" autocomplete="current-password" onchange="saveEmail()">
+                <details style="margin-top:6px">
+                  <summary style="font-size:11.5px;color:var(--text-3);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--text-3);font-size:10px;line-height:1">?</span>
+                    How do I get this?
+                  </summary>
+                  <p style="font-size:11.5px;color:var(--text-3);line-height:1.55;margin:6px 0 0">
+                    Gmail: Google Account → Security → App Passwords → create a 16-character password.
+                  </p>
+                </details>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div style="max-width:560px;margin-top:32px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3 style="font-size:14px;font-weight:600;color:var(--text)">Subscribers</h3>
+          <button class="btn small purple" onclick="showAddSubscriber()">+ New Subscriber</button>
+        </div>
+
+        <!-- Add subscriber form (hidden by default) -->
+        <div id="addSubscriberForm" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;color:var(--accent2)">New Subscriber</div>
+          <div style="font-size:12px;color:var(--text-3);line-height:1.5;margin-bottom:14px">
+            Get notified when RBI, SEBI, or IBBI publish something relevant to you.
+          </div>
+          <div class="form-row" style="margin-bottom:10px">
+            <label for="newSubEmail">Email</label>
+            <input class="form-input" id="newSubEmail" placeholder="lawyer@firm.com" type="email">
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:var(--muted)">Keywords (optional)</label>
+            <div class="policy-kw-list" id="newSubKws" style="margin:6px 0 8px"></div>
+            <div class="policy-kw-add">
+              <input class="policy-kw-input" id="newSubKwInput" placeholder="Add keyword…"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault();addNewSubKw()}">
+              <button class="btn small" onclick="addNewSubKw()">+</button>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:12px">
+            <label for="newSubDesc">Describe what you care about (optional)</label>
+            <textarea class="form-input" id="newSubDesc" rows="2" placeholder="e.g. external commercial borrowing rules, insolvency proceedings"></textarea>
+          </div>
+          <div class="policy-actions">
+            <button class="btn small purple" onclick="saveNewSubscriber()">Add Subscriber</button>
+            <button class="btn small secondary" onclick="hideAddSubscriber()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Subscriber cards list -->
+        <div class="policy-grid" id="subscriberGrid"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-compliance" role="tabpanel">
+      <div style="max-width:560px">
+        <p style="color:var(--text-2);margin-bottom:20px;font-size:13px;line-height:1.6">
+          Upload a regulation and an internal policy (both PDF) and let the AI compare them — highlighting what's
+          compliant, what's non-compliant, and what's missing.
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          <div>
+            <input type="file" id="ccRegFileInput" accept="application/pdf,.pdf" style="display:none" onchange="ccOnFileChosen(event,'reg')">
+            <button class="btn small secondary" style="width:100%;text-align:left" onclick="document.getElementById('ccRegFileInput').click()">
+              ⇪ Upload Regulation (PDF)
+            </button>
+            <div id="ccRegFileName" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
+          </div>
+          <div>
+            <input type="file" id="ccPolicyFileInput" accept="application/pdf,.pdf" style="display:none" onchange="ccOnFileChosen(event,'policy')">
+            <button class="btn small secondary" style="width:100%;text-align:left" onclick="document.getElementById('ccPolicyFileInput').click()">
+              ⇪ Upload Policy (PDF)
+            </button>
+            <div id="ccPolicyFileName" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
+          </div>
+          <button class="btn purple" id="ccCheckBtn" onclick="ccCheckCompliance()">Check Compliance</button>
+          <div id="ccStatus" style="font-size:12px;color:var(--text-3)"></div>
+        </div>
+
+        <div id="ccResults" style="display:none;flex-direction:column;gap:14px"></div>
+      </div>
+    </div>
+
+    <!-- Check Validity tab -->
+    <div class="tab-pane" id="tab-validity" role="tabpanel">
+      <div style="max-width:560px">
+        <p style="color:var(--text-2);margin-bottom:20px;font-size:13px;line-height:1.6">
+          Check whether a circular, notification, or direction has been repealed, superseded, or
+          amended by a later document — pick one already in the store, or upload a PDF.
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          <div class="form-row">
+            <label for="vcSearchInput">Search existing documents</label>
+            <input class="form-input" id="vcSearchInput" type="search" placeholder="Search by title…"
+                   oninput="vcSearchDocuments()" autocomplete="off">
+            <div id="vcSearchResults" style="display:none;flex-direction:column;gap:2px;margin-top:6px;max-height:220px;overflow-y:auto"></div>
+          </div>
+
+          <div style="text-align:center;color:var(--text-3);font-size:11px">— or —</div>
+
+          <div>
+            <input type="file" id="vcFileInput" accept="application/pdf,.pdf" style="display:none" onchange="vcOnFileChosen(event)">
+            <button class="btn small secondary" style="width:100%;text-align:left" onclick="document.getElementById('vcFileInput').click()">
+              ⇪ Upload a PDF to check
+            </button>
+            <div id="vcFileName" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
+            <div id="vcUploadMeta" style="display:none;flex-direction:column;gap:8px;margin-top:10px">
+              <input class="form-input" id="vcUploadTitle" placeholder="Document title">
+              <select class="form-input" id="vcUploadSource">
+                <option value="">Select source…</option>
+                <option value="RBI">RBI</option>
+                <option value="SEBI">SEBI</option>
+                <option value="IBBI">IBBI</option>
+              </select>
+              <input class="form-input" id="vcUploadDate" placeholder="Date (e.g. 05 Jun 2026)">
+              <button class="btn small purple" id="vcUploadBtn" onclick="vcUploadAndCheck()">Check Validity</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="vcStatus" style="font-size:12px;color:var(--text-3);margin-bottom:10px"></div>
+        <div id="vcResult"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '';
+
+// ── State ────────────────────────────────────────────────────────────────────
+let keywords         = [];
+let activeKws        = [];     // multiple keywords currently filtering (OR match)
+let currentSrc       = 'ALL';
+let currentPage      = 1;
+let searchText       = '';
+let searchTimer      = null;
+let subscribers      = [];     // [{id,email,keywords,description,enabled,sentItemIds}, …]
+let newSubKws        = [];     // temp keyword list for the "new subscriber" form
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+function highlight(text, kws) {
+  let out = esc(text);
+  (kws || []).forEach(k => {
+    out = out.replace(new RegExp(`(${escRe(esc(k))})`, 'gi'), '<mark>$1</mark>');
+  });
+  return out;
+}
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const m = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+function toast(msg, color) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = color || 'var(--border)';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function fetchConfig() {
+  const d = await fetch(`${API}/api/config`).then(r => r.json());
+  keywords = d.keywords || [];
+
+  document.getElementById('emailEnabled').checked  = d.email.enabled;
+  document.getElementById('emailHost').value        = d.email.host  || '';
+  document.getElementById('emailPort').value        = d.email.port  || 587;
+  document.getElementById('emailUser').value        = d.email.user  || '';
+}
+
+async function saveKeywords() {
+  await fetch(`${API}/api/config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keywords })
+  });
+}
+
+async function saveEmail() {
+  const cfg = {
+    email: {
+      enabled: document.getElementById('emailEnabled').checked,
+      host:    document.getElementById('emailHost').value,
+      port:    Number(document.getElementById('emailPort').value) || 587,
+      user:    document.getElementById('emailUser').value,
+    }
+  };
+  const pass = document.getElementById('emailPass').value;
+  if (pass) cfg.email.pass = pass;
+  await fetch(`${API}/api/config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cfg)
+  });
+  toast('Email settings saved');
+}
+
+// ── Subscribers ────────────────────────────────────────────────────────────────
+async function fetchSubscribers() {
+  subscribers = await fetch(`${API}/api/subscribers`).then(r => r.json());
+  renderSubscriberGrid();
+}
+
+function renderSubscriberGrid() {
+  const el = document.getElementById('subscriberGrid');
+  if (!el) return;
+  if (!subscribers.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="big" aria-hidden="true">✉️</div>
+      <div><strong>No subscribers yet</strong></div>
+      <div style="font-size:12.5px;margin-top:6px;color:var(--text-3)">Click <strong style="color:var(--text-2)">+ New Subscriber</strong> to add someone</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = subscribers.map(s => `
+    <div class="policy-card">
+      <div class="policy-card-header">
+        <div class="policy-card-title">
+          <span>${esc(s.email)}</span>
+          ${!s.enabled ? `<span class="policy-dept-badge" style="background:var(--surface3);color:var(--text-3)">Paused</span>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <label class="toggle" aria-label="Toggle subscriber ${esc(s.email)}">
+            <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSubscriber('${s.id}', this.checked)">
+            <span class="slider"></span>
+          </label>
+          <button class="btn small secondary" onclick="sendSubscriberTest('${s.id}', this)">Send test</button>
+          <button class="btn small secondary" onclick="removeSubscriber('${s.id}')">✕ Remove</button>
+        </div>
+      </div>
+      ${s.keywords && s.keywords.length ? `<div class="policy-kw-list">${s.keywords.map(k => `<span class="policy-kw-chip">${esc(k)}</span>`).join('')}</div>` : ''}
+      ${s.description ? `<div style="font-size:12px;color:var(--text-3);font-style:italic;margin-top:6px">"${esc(s.description)}"</div>` : ''}
+    </div>`).join('');
+}
+
+async function toggleSubscriber(id, enabled) {
+  await fetch(`${API}/api/subscribers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled })
+  });
+  const s = subscribers.find(x => x.id === id);
+  if (s) s.enabled = enabled;
+  toast(enabled ? 'Subscriber enabled' : 'Subscriber paused');
+}
+
+async function removeSubscriber(id) {
+  const s = subscribers.find(x => x.id === id);
+  if (!s) return;
+  if (!confirm(`Remove subscriber "${s.email}"? This cannot be undone.`)) return;
+  await fetch(`${API}/api/subscribers/${id}`, { method: 'DELETE' });
+  subscribers = subscribers.filter(x => x.id !== id);
+  renderSubscriberGrid();
+  toast('Subscriber removed', 'var(--red)');
+}
+
+async function sendSubscriberTest(id, btn) {
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const r = await fetch(`${API}/api/subscribers/${id}/test`, { method: 'POST' });
+    const d = await r.json();
+    toast(d.ok ? `✓ Sent to ${d.sentTo}` : `✗ ${d.error}`, d.ok ? 'var(--green)' : 'var(--red)');
+  } catch (e) {
+    toast('✗ Request failed', 'var(--red)');
+  }
+  btn.disabled = false; btn.textContent = original;
+}
+
+function showAddSubscriber() {
+  newSubKws = [];
+  document.getElementById('newSubEmail').value    = '';
+  document.getElementById('newSubKwInput').value  = '';
+  document.getElementById('newSubKws').innerHTML  = '';
+  document.getElementById('newSubDesc').value     = '';
+  document.getElementById('addSubscriberForm').style.display = 'block';
+}
+function hideAddSubscriber() {
+  document.getElementById('addSubscriberForm').style.display = 'none';
+}
+
+function renderNewSubKwChips() {
+  document.getElementById('newSubKws').innerHTML = newSubKws.map((k, i) => `
+    <span class="policy-kw-chip">${esc(k)}
+      <button onclick="newSubKws.splice(${i},1);renderNewSubKwChips()" title="Remove">×</button>
+    </span>`).join('');
+}
+
+function addNewSubKw() {
+  const input = document.getElementById('newSubKwInput');
+  const val   = input.value.trim();
+  if (!val || newSubKws.map(k => k.toLowerCase()).includes(val.toLowerCase())) { input.value = ''; return; }
+  newSubKws.push(val);
+  input.value = '';
+  renderNewSubKwChips();
+}
+
+async function saveNewSubscriber() {
+  const email = document.getElementById('newSubEmail').value.trim();
+  const description = document.getElementById('newSubDesc').value.trim();
+  if (!email) { toast('Enter an email address', 'var(--yellow)'); return; }
+  if (!newSubKws.length && !description) { toast('Add at least one keyword or a description', 'var(--yellow)'); return; }
+
+  const r = await fetch(`${API}/api/subscribers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, keywords: newSubKws, description })
+  });
+  const d = await r.json();
+  if (!d.ok) { toast(`✗ ${d.error}`, 'var(--red)'); return; }
+  subscribers.push(d.subscriber);
+  hideAddSubscriber();
+  renderSubscriberGrid();
+  toast(`Added: ${email}`, 'var(--green)');
+}
+
+async function fetchItems() {
+  const params = new URLSearchParams({
+    source: currentSrc,
+    page:   currentPage,
+    limit:  50
+  });
+  // active keyword filter(s) OR search text — use whichever is set
+  if (activeKws.length) params.set('keywords', activeKws.join(','));
+  if (searchText)       params.set('keywords', searchText);
+  const d = await fetch(`${API}/api/items?${params}`).then(r => r.json());
+  return d;
+}
+
+
+async function fetchStats() {
+  const d = await fetch(`${API}/api/stats`).then(r => r.json());
+  document.getElementById('statTotal').textContent = d.total;
+  document.getElementById('statRBI').textContent   = d.rbi;
+  document.getElementById('statSEBI').textContent  = d.sebi;
+  document.getElementById('statIBBI').textContent  = d.ibbi || 0;
+  if (d.lastScraped)
+    document.getElementById('lastScraped').textContent = 'Last: ' + timeAgo(d.lastScraped);
+}
+
+async function fetchLog() {
+  const d = await fetch(`${API}/api/log`).then(r => r.json());
+  const el = document.getElementById('scrapeLog');
+  if (!d.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">No scrapes yet…</div>'; return; }
+  el.innerHTML = d.slice(0,5).map(e => `
+    <div class="log-entry">
+      <span class="log-time">${new Date(e.time).toLocaleTimeString()}</span>
+      <span>↓${e.newItems} new</span>
+      <span class="log-match">✓${e.matching}</span>
+    </div>`).join('');
+}
+
+async function triggerScrape() {
+  const btn = document.getElementById('scrapeBtn');
+  btn.textContent = '⏳ Scraping…'; btn.disabled = true;
+  await fetch(`${API}/api/scrape`, { method: 'POST' });
+  toast('Scrape started — results appear shortly');
+  setTimeout(async () => {
+    await refreshAll();
+    btn.textContent = '↻ Scrape Now'; btn.disabled = false;
+  }, 10000);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderKeywords() {
+  const el = document.getElementById('kwList');
+  if (!keywords.length) {
+    el.innerHTML = '<span style="color:var(--muted);font-size:12px">No keywords — add one below</span>';
+    return;
+  }
+  el.innerHTML = keywords.map((k, i) => `
+    <div class="kw-tag${activeKws.includes(k) ? ' active' : ''}" onclick="toggleKeyword(${i})">
+      ${esc(k)}
+      <button onclick="removeKeyword(event,${i})" title="Remove">×</button>
+    </div>`).join('');
+}
+
+function renderFilterBar() {
+  const bar   = document.getElementById('filterBar');
+  const label = document.getElementById('filterLabel');
+  if (activeKws.length) {
+    bar.style.display = 'block';
+    label.textContent = activeKws.join(', ');
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function renderItems(data) {
+  const container = document.getElementById('itemsContainer');
+
+  // Update visible count
+  document.getElementById('statVisible').textContent = data.total;
+  document.getElementById('countBadge').textContent  =
+    `${data.total} item${data.total !== 1 ? 's' : ''}`;
+
+  if (!data.items || data.items.length === 0) {
+    const activeFilter = activeKws.length ? activeKws.join(', ') : null;
+    container.innerHTML = `<div class="empty">
+      <div class="big" aria-hidden="true">📭</div>
+      <div><strong>${activeFilter ? `Nothing matched "${esc(activeFilter)}"` : 'No documents yet'}</strong></div>
+      <div style="font-size:12.5px;margin-top:6px;color:var(--text-3)">
+        ${activeFilter
+          ? 'Try a broader filter, or click × to clear'
+          : 'Click <strong style="color:var(--text-2)">↻ Scrape Now</strong> to fetch the latest publications'}
+      </div>
+    </div>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  const hlKws = activeKws.length ? activeKws : (searchText ? [searchText] : []);
+  container.innerHTML = `<div class="items-list">${data.items.map(it => renderCard(it, hlKws)).join('')}</div>`;
+  renderPagination(data.total, data.page, 50);
+
+  if (data.lastScraped)
+    document.getElementById('lastScraped').textContent = 'Last: ' + timeAgo(data.lastScraped);
+}
+
+function renderCard(item, hlKws) {
+  const srcClass   = item.source.toLowerCase();
+  const matchedKws = keywords.filter(k => item.title.toLowerCase().includes(k.toLowerCase()));
+  const dateStr    = item.dateFormatted || item.date || null;
+
+  const titleHtml = item.url
+    ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">${highlight(item.title, hlKws)}</a>`
+    : highlight(item.title, hlKws);
+
+  const summaryHtml = item.ai?.summary
+    ? `<div class="ai-summary">${esc(item.ai.summary)}</div>`
+    : '';
+
+  const excerptHtml = item.ai?.excerpts?.length
+    ? `<div class="excerpt-section">
+        <div class="excerpt-label">📄 Found in document</div>
+        ${item.ai.excerpts.map(e => `
+          <div class="excerpt-item">
+            <span class="excerpt-kw">${esc(e.keyword)}</span>
+            <span class="excerpt-text">${highlight(e.excerpt, [e.keyword])}</span>
+          </div>`).join('')}
+      </div>`
+    : '';
+
+  return `<div class="item-card">
+    <div class="item-title">${titleHtml}</div>
+    ${summaryHtml}
+    ${excerptHtml}
+    <div class="item-meta">
+      <span class="badge ${srcClass}">${esc(item.source)}</span>
+      <span class="badge type">${esc(item.type)}</span>
+      ${dateStr ? `<span class="item-date">📅 ${esc(dateStr)}</span>` : ''}
+      ${matchedKws.slice(0,4).map(k => `<span class="badge kw">${esc(k)}</span>`).join('')}
+      <span class="item-fetched">fetched ${timeAgo(item.fetchedAt)}</span>
+    </div>
+  </div>`;
+}
+
+function renderPagination(total, page, limit) {
+  const pages = Math.ceil(total / limit);
+  const el    = document.getElementById('pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  if (page > 1)     html += `<button class="btn secondary small" onclick="goPage(${page-1})">← Prev</button>`;
+  html += `<span style="color:var(--muted);font-size:13px">Page ${page} of ${pages}</span>`;
+  if (page < pages) html += `<button class="btn secondary small" onclick="goPage(${page+1})">Next →</button>`;
+  el.innerHTML = html;
+}
+
+// ── Interactions ──────────────────────────────────────────────────────────────
+function toggleKeyword(idx) {
+  const kw = keywords[idx];
+  const pos = activeKws.indexOf(kw);
+  if (pos === -1) activeKws.push(kw);       // not selected — select it
+  else            activeKws.splice(pos, 1); // already selected — deselect it
+  currentPage = 1;
+  renderKeywords();
+  renderFilterBar();
+  loadFeed();
+}
+
+function clearActiveKeyword() {
+  activeKws    = [];
+  currentPage  = 1;
+  renderKeywords();
+  renderFilterBar();
+  loadFeed();
+}
+
+// ── Add Document (URL + upload) ───────────────────────────────────────────────
+let pendingDocFile = null;
+
+function setDocStatus(msg, color) {
+  const el = document.getElementById('docStatusMsg');
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.style.color   = color || 'var(--text-3)';
+  el.textContent   = msg;
+}
+
+async function addDocumentFromUrl() {
+  const input = document.getElementById('docUrlInput');
+  const btn   = document.getElementById('docUrlBtn');
+  const url   = input.value.trim();
+  if (!url) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+  setDocStatus('Fetching and analysing the document — this can take a moment…', 'var(--text-3)');
+
+  try {
+    const resp = await fetch(`${API}/api/documents/url`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ url })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) throw new Error(data.error || 'Could not add that document.');
+
+    input.value = '';
+    setDocStatus(`✓ Added "${data.item.title}" (${data.item.source}) — now searchable in chat.`, 'var(--green)');
+    toast(`Document added: ${data.item.title}`, 'var(--green)');
+    await refreshAll();
+  } catch (e) {
+    setDocStatus(e.message || 'Something went wrong adding that URL.', 'var(--red)');
+    toast(e.message || 'Failed to add document', 'var(--red)');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add';
+  }
+}
+
+function onDocFileChosen(evt) {
+  const file = evt.target.files && evt.target.files[0];
+  if (!file) return;
+
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  if (!isPdf) {
+    setDocStatus('Only PDF files are accepted. Please choose a .pdf file.', 'var(--red)');
+    evt.target.value = '';
+    return;
+  }
+
+  pendingDocFile = file;
+  document.getElementById('docFileName').textContent = `Selected: ${file.name}`;
+  document.getElementById('docTitleInput').value = file.name.replace(/\.pdf$/i, '');
+  document.getElementById('docSourceInput').value = '';
+  document.getElementById('docDateInput').value = '';
+  document.getElementById('docUploadForm').style.display = 'block';
+  setDocStatus('');
+}
+
+function cancelDocUpload() {
+  pendingDocFile = null;
+  document.getElementById('docFileInput').value = '';
+  document.getElementById('docUploadForm').style.display = 'none';
+}
+
+async function submitDocumentUpload() {
+  if (!pendingDocFile) return;
+
+  const title  = document.getElementById('docTitleInput').value.trim();
+  const source = document.getElementById('docSourceInput').value;
+  const date   = document.getElementById('docDateInput').value.trim();
+
+  if (!title)  { setDocStatus('Please enter a document title.', 'var(--red)'); return; }
+  if (!source) { setDocStatus('Please select a source (RBI, SEBI, or IBBI).', 'var(--red)'); return; }
+  if (!date)   { setDocStatus('Please enter a document date.', 'var(--red)'); return; }
+
+  const btn = document.getElementById('docUploadSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  setDocStatus('Uploading and analysing the PDF — this can take a moment…', 'var(--text-3)');
+
+  try {
+    const fd = new FormData();
+    fd.append('file', pendingDocFile);
+    fd.append('title', title);
+    fd.append('source', source);
+    fd.append('date', date);
+
+    const resp = await fetch(`${API}/api/documents/upload`, { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) throw new Error(data.error || 'Could not save that PDF.');
+
+    cancelDocUpload();
+    setDocStatus(`✓ Added "${data.item.title}" (${data.item.source}) — now searchable in chat.`, 'var(--green)');
+    toast(`Document added: ${data.item.title}`, 'var(--green)');
+    await refreshAll();
+  } catch (e) {
+    setDocStatus(e.message || 'Something went wrong saving that PDF.', 'var(--red)');
+    toast(e.message || 'Failed to save document', 'var(--red)');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save document';
+  }
+}
+
+function addKeyword() {
+  const input = document.getElementById('kwInput');
+  const val   = input.value.trim();
+  if (!val) return;
+  if (keywords.map(k => k.toLowerCase()).includes(val.toLowerCase())) {
+    toast('Already saved', 'var(--yellow)');
+    input.value = '';
+    return;
+  }
+  keywords.push(val);
+  input.value = '';
+  renderKeywords();
+  saveKeywords().then(() => toast(`Added: ${val}`, 'var(--green)'));
+}
+
+function removeKeyword(evt, idx) {
+  evt.stopPropagation();
+  const removed = keywords[idx];
+  keywords.splice(idx, 1);
+  const pos = activeKws.indexOf(removed);
+  if (pos !== -1) {
+    activeKws.splice(pos, 1);
+    renderFilterBar();
+    loadFeed();
+  }
+  renderKeywords();
+  saveKeywords().then(() => toast(`Removed: ${removed}`, 'var(--red)'));
+}
+
+function setSource(src, btn) {
+  currentSrc  = src;
+  currentPage = 1;
+  document.querySelectorAll('.src-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-pressed', 'false');
+  });
+  btn.classList.add('active');
+  btn.setAttribute('aria-pressed', 'true');
+  loadFeed();
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    searchText  = document.getElementById('searchInput').value.trim();
+    currentPage = 1;
+    loadFeed();
+  }, 280);
+}
+
+function goPage(p) {
+  currentPage = p;
+  loadFeed();
+  window.scrollTo(0, 0);
+}
+
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  el.setAttribute('aria-selected', 'true');
+  document.getElementById('tab-' + id).classList.add('active');
+  // Re-render subscribers list each time the tab is opened
+  if (id === 'email') fetchSubscribers();
+}
+
+// ── Load & refresh ────────────────────────────────────────────────────────────
+async function loadFeed() {
+  document.getElementById('itemsContainer').innerHTML = '<div class="spinner"></div>';
+  const data = await fetchItems();
+  renderItems(data);
+}
+
+async function refreshAll() {
+  await Promise.all([fetchStats(), fetchLog(), loadFeed()]);
+}
+
+async function init() {
+  await fetchConfig();
+  renderKeywords();
+  renderFilterBar();
+  await Promise.all([refreshAll(), fetchSubscribers()]);
+}
+
+init();
+
+// Auto-refresh every 30 s — pause when browser tab is hidden (performance harden)
+let _refreshInterval = setInterval(refreshAll, 30000);
+document.addEventListener('visibilitychange', () => {
+  clearInterval(_refreshInterval);
+  if (!document.hidden) {
+    refreshAll();
+    _refreshInterval = setInterval(refreshAll, 30000);
+  }
+});
+
+// ── AI Chat ──────────────────────────────────────────────────────────────────
+const CHAT_STARTERS = [
+  'Has RBI changed ECB guidelines recently?',
+  'List all SEBI disclosure requirements',
+  'What are the latest IBBI insolvency rules?',
+  'Table of FPI investment limits and thresholds',
+  'Key changes to NBFC lending norms this year',
+  'What circulars has RBI issued about interest rates?'
+];
+
+let _chatConvo = []; // [{role:'user'|'assistant', content}] — local mirror of conversation memory
+let _chatBusy  = false;
+
+// ── Document Q&A mode ─────────────────────────────────────────────────────────
+// 'general'  → searches the whole database (existing behaviour, /api/ask)
+// 'document' → answers strictly from one selected uploaded document (/api/ask/document)
+let _chatMode          = 'general';
+let _chatUploadedDocs  = [];   // [{id,title,source,type,date,totalChunks}, …]
+let _chatSelectedDocId = '';
+
+async function chatToggleMode() {
+  if (_chatBusy) return;
+  _chatMode = (_chatMode === 'general') ? 'document' : 'general';
+
+  const btn    = document.getElementById('chatModeToggleBtn');
+  const docBar = document.getElementById('chatDocBar');
+  const input  = document.getElementById('chatInput');
+
+  if (_chatMode === 'document') {
+    btn.classList.add('active');
+    btn.innerHTML = '⇄ General Search';
+    docBar.style.display = 'flex';
+    input.placeholder = 'Select a document above, then ask your question…';
+    await _chatLoadUploadedDocs();
+  } else {
+    btn.classList.remove('active');
+    btn.innerHTML = '⇄ Document Q&A';
+    docBar.style.display = 'none';
+    _chatSelectedDocId = '';
+    input.placeholder = 'Ask about any regulation, circular, or policy change…';
+  }
+}
+
+async function _chatLoadUploadedDocs() {
+  const sel    = document.getElementById('chatDocSelect');
+  const status = document.getElementById('chatDocStatus');
+  status.textContent = 'Loading documents…';
+  try {
+    const r = await fetch(`${API}/api/documents/uploaded`);
+    const d = await r.json();
+    _chatUploadedDocs = (d.ok && Array.isArray(d.items)) ? d.items : [];
+
+    sel.innerHTML = '<option value="">Select an uploaded document…</option>' +
+      _chatUploadedDocs.map(it => `
+        <option value="${esc(it.id)}">${esc(it.source)} · ${esc(it.title.slice(0, 80))}${it.title.length > 80 ? '…' : ''}</option>
+      `).join('');
+
+    status.textContent = _chatUploadedDocs.length
+      ? `${_chatUploadedDocs.length} uploaded document${_chatUploadedDocs.length === 1 ? '' : 's'} available`
+      : 'No uploaded documents found — add one via "Add document" first.';
+  } catch (e) {
+    status.textContent = 'Failed to load documents.';
+  }
+}
+
+function chatOnDocSelect() {
+  const sel = document.getElementById('chatDocSelect');
+  _chatSelectedDocId = sel.value || '';
+  const status = document.getElementById('chatDocStatus');
+  const input  = document.getElementById('chatInput');
+  if (_chatSelectedDocId) {
+    const doc = _chatUploadedDocs.find(d => d.id === _chatSelectedDocId);
+    status.textContent = doc ? `Ready — ${doc.totalChunks} chunk${doc.totalChunks === 1 ? '' : 's'} loaded` : '';
+    input.placeholder = 'Ask a question about this document…';
+  } else {
+    status.textContent = '';
+    input.placeholder = 'Select a document above, then ask your question…';
+  }
+}
+
+// Session ID — identifies this conversation to the backend's server-side memory.
+// Persisted in sessionStorage so a page refresh keeps the same conversation.
+function _chatNewSessionId() {
+  return (crypto.randomUUID ? crypto.randomUUID() : `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+}
+let _chatSessionId = sessionStorage.getItem('regmon_chat_session') || _chatNewSessionId();
+sessionStorage.setItem('regmon_chat_session', _chatSessionId);
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function _chatAutoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+}
+
+function _chatScrollBottom() {
+  const el = document.getElementById('chatMessages');
+  if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
+function _chatShowStarters() {
+  const el = document.getElementById('chatMessages');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="chat-starters" id="chatStarters">
+      <div class="chat-starters-icon" aria-hidden="true">⚖️</div>
+      <div class="chat-starters-label">Ask anything about Indian financial regulations</div>
+      <div class="chat-starters-chips">
+        ${CHAT_STARTERS.map(s =>
+          `<button class="chat-starter-chip" onclick="chatUseStarter(this)">${esc(s)}</button>`
+        ).join('')}
+      </div>
+    </div>`;
+}
+
+function chatUseStarter(btn) {
+  const input = document.getElementById('chatInput');
+  if (!input) return;
+  input.value = btn.textContent.trim();
+  _chatAutoResize(input);
+  chatSend();
+}
+
+async function chatClear() {
+  // Tell the backend to drop this session's stored memory
+  try {
+    await fetch(`${API}/api/ask/new`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ sessionId: _chatSessionId })
+    });
+  } catch (e) { /* non-fatal — backend will idle-expire the old session anyway */ }
+
+  // Start a brand new session so the next message can't inherit old context
+  _chatSessionId = _chatNewSessionId();
+  sessionStorage.setItem('regmon_chat_session', _chatSessionId);
+
+  _chatConvo = [];
+  _chatBusy  = false;
+  _chatShowStarters();
+  const input   = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  if (input)   { input.value = ''; _chatAutoResize(input); input.focus(); }
+  if (sendBtn) sendBtn.disabled = false;
+}
+
+// ── Append helpers ────────────────────────────────────────────────────────────
+
+function _chatAppendRow(role, innerHtml) {
+  const container = document.getElementById('chatMessages');
+  if (!container) return;
+  const isAI  = role === 'ai';
+  const row   = document.createElement('div');
+  row.className = `chat-row ${role}`;
+  row.innerHTML = `
+    <div class="chat-avatar" aria-hidden="true">${isAI ? '⚖' : '↑'}</div>
+    <div class="chat-bubble">${innerHtml}</div>`;
+  container.appendChild(row);
+  _chatScrollBottom();
+  return row;
+}
+
+function _chatAppendUser(text) {
+  _chatAppendRow('user', esc(text));
+}
+
+function _chatAppendTyping() {
+  const container = document.getElementById('chatMessages');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.className = 'chat-row ai';
+  row.id = '_chatTypingRow';
+  row.innerHTML = `
+    <div class="chat-avatar" aria-hidden="true">⚖</div>
+    <div class="chat-bubble">
+      <div class="chat-typing" aria-label="AI is thinking"><span></span><span></span><span></span></div>
+    </div>`;
+  container.appendChild(row);
+  _chatScrollBottom();
+}
+
+function _chatRemoveTyping() {
+  const el = document.getElementById('_chatTypingRow');
+  if (el) el.remove();
+}
+
+// ── Response rendering ────────────────────────────────────────────────────────
+
+function _chatBuildStructuredHtml(d) {
+  if (d.queryType === 'table' && Array.isArray(d.tableHeaders) && Array.isArray(d.tableRows) && d.tableRows.length) {
+    const thead = d.tableHeaders.map(h => `<th>${esc(h)}</th>`).join('');
+    const tbody = d.tableRows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('');
+    return `<div class="ask-table-wrap"><table class="ask-table">
+      <thead><tr>${thead}</tr></thead>
+      <tbody>${tbody}</tbody>
+    </table></div>`;
+  }
+  if (d.queryType === 'list' && Array.isArray(d.listItems) && d.listItems.length) {
+    return `<ul class="ask-list">${d.listItems.map(item => `<li>${esc(item)}</li>`).join('')}</ul>`;
+  }
+  return '';
+}
+
+function _chatBuildSourcesHtml(sources) {
+  if (!sources || !sources.length) return '';
+  return `<div>
+    <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-bottom:5px">Sources cited</div>
+    <div class="chat-sources">
+      ${sources.map(s => `
+        <div class="chat-source-item">
+          <span class="badge ${s.source.toLowerCase()}" style="flex-shrink:0">${esc(s.source)}</span>
+          <span class="badge type" style="flex-shrink:0">${esc(s.type)}</span>
+          ${s.date ? `<span class="item-date" style="flex-shrink:0">📅 ${esc(s.date)}</span>` : ''}
+          ${s.url
+            ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
+            : `<span style="font-size:12px;color:var(--text)">${esc(s.title)}</span>`}
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function _chatRenderAIResponse(d) {
+  const copyId      = `_chatMsg_${Date.now()}`;
+  const structured  = _chatBuildStructuredHtml(d);
+  const sources     = _chatBuildSourcesHtml(d.sources);
+  const badgeLabel  = { narrative: '✦ Answer', table: '⊞ Table', list: '≡ List' }[d.queryType] || '✦ Answer';
+  const matchNote   = d.totalMatched ? `${d.totalMatched} docs · ${(d.sources||[]).length} cited` : '';
+  const scopedNote  = d.documentMode
+    ? `<span style="color:var(--accent)" title="Answered strictly from the full text of the selected document — general search was bypassed">📄 Document Q&amp;A — full document read</span>`
+    : (d.scopedToPrevious
+        ? `<span style="color:var(--accent)" title="This answer is scoped strictly to the document(s) already discussed">↻ scoped to previous doc</span>`
+        : '');
+
+  const inner = `
+    <div id="${copyId}">
+      <div style="font-size:13.5px;line-height:1.68;color:var(--text)">${esc(d.answer)}</div>
+      ${structured ? `<div style="margin-top:10px">${structured}</div>` : ''}
+    </div>
+    ${sources}
+    <div class="chat-bubble-footer">
+      <span class="ask-query-type-badge ${d.queryType || 'narrative'}">${badgeLabel}</span>
+      ${matchNote ? `<span>${matchNote}</span>` : ''}
+      ${scopedNote}
+      <button class="chat-copy-btn" onclick="_chatCopy('${copyId}')" aria-label="Copy response">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+      <span style="margin-left:auto;opacity:.45;font-style:italic">Verify against official sources</span>
+    </div>`;
+
+  _chatAppendRow('ai', inner);
+}
+
+function _chatCopy(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  navigator.clipboard.writeText((el.innerText || el.textContent || '').trim())
+    .then(() => {
+      // find the copy button in the same bubble footer
+      const btn = el.closest('.chat-bubble')?.querySelector('.chat-copy-btn');
+      if (btn) {
+        const orig = btn.innerHTML;
+        btn.textContent = '✓ Copied';
+        setTimeout(() => { btn.innerHTML = orig; }, 1800);
+      }
+    }).catch(() => {});
+}
+
+// ── Main send function ────────────────────────────────────────────────────────
+
+async function chatSend() {
+  if (_chatBusy) return;
+  const input   = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  const question = (input?.value || '').trim();
+  if (!question) { input?.focus(); return; }
+
+  // Document Q&A mode requires a document to be selected first
+  if (_chatMode === 'document' && !_chatSelectedDocId) {
+    _chatAppendRow('ai', `<div class="ask-error">✗ Please select a document from the dropdown above before asking a question.</div>`);
+    input?.focus();
+    return;
+  }
+
+  // Remove starters on first message
+  document.getElementById('chatStarters')?.remove();
+
+  _chatBusy = true;
+  sendBtn.disabled = true;
+  input.value = '';
+  _chatAutoResize(input);
+
+  _chatAppendUser(question);
+  _chatAppendTyping();
+
+  try {
+    const endpoint = (_chatMode === 'document') ? '/api/ask/document' : '/api/ask';
+    const payload  = (_chatMode === 'document')
+      ? { documentId: _chatSelectedDocId, question, sessionId: _chatSessionId, history: _chatConvo.slice(-16) }
+      : {
+          question,
+          sessionId: _chatSessionId,
+          // Sent as a fallback in case the server-side session was dropped (e.g. idle expiry);
+          // the backend prefers its own stored history when the session exists.
+          history: _chatConvo.slice(-16)
+        };
+
+    const r = await fetch(`${API}${endpoint}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
+    });
+    const d = await r.json();
+    _chatRemoveTyping();
+
+    if (!d.ok) {
+      _chatAppendRow('ai', `<div class="ask-error">✗ ${esc(d.error || 'Unknown error')}</div>`);
+      return;
+    }
+
+    _chatRenderAIResponse(d);
+
+    // Persist this exchange into conversation memory
+    _chatConvo.push({ role: 'user',      content: question });
+    _chatConvo.push({ role: 'assistant', content: d.answer });
+
+  } catch (e) {
+    _chatRemoveTyping();
+    _chatAppendRow('ai', `<div class="ask-error">✗ Request failed — is the server running?</div>`);
+  } finally {
+    _chatBusy = false;
+    sendBtn.disabled = false;
+    input?.focus();
+  }
+}
+
+// Show starters on page load
+_chatShowStarters();
+
+// ── Compliance Checker ────────────────────────────────────────────────────────
+let _ccRegFile    = null;
+let _ccPolicyFile = null;
+let _ccLastResult = null; // most recent /api/compliance/check result, used by the PDF export
+
+const CC_SEVERITY_META  = {
+  Critical: { label: 'CRITICAL', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' },
+  High:     { label: 'HIGH',     color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
+  Medium:   { label: 'MEDIUM',   color: '#eab308', bg: 'rgba(234,179,8,0.15)' }
+};
+const CC_SEVERITY_ORDER = { Critical: 0, High: 1, Medium: 2 };
+
+// Renders a Non-Compliant/Missing findings array: severity label, finding text, rationale,
+// and a collapsible "Suggested fix" disclosure — sorted Critical first within the section.
+function ccRenderFindings(findings) {
+  // Guard against a non-array response shape (e.g. a stale server still returning the old
+  // flat-string schema) — spreading a string here would silently iterate it character-by-
+  // character instead of failing loudly, which is exactly what produced the "MEDIUM/undefined"
+  // repeated-hundreds-of-times symptom.
+  if (!Array.isArray(findings) || !findings.length) return `<div style="font-size:13px;color:var(--text-3)">—</div>`;
+  const sorted = [...findings].sort((a, b) => (CC_SEVERITY_ORDER[a.severity] ?? 3) - (CC_SEVERITY_ORDER[b.severity] ?? 3));
+  return sorted.map(f => {
+    const meta = CC_SEVERITY_META[f.severity] || CC_SEVERITY_META.Medium;
+    return `
+    <div style="padding:9px 0;border-top:1px solid rgba(255,255,255,0.06)">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="flex-shrink:0;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.04em;color:${meta.color};background:${meta.bg};padding:2px 6px;border-radius:4px">${meta.label}</span>
+        <div style="font-size:13px;line-height:1.55;color:var(--text)">${esc(f.finding)}</div>
+      </div>
+      ${f.rationale ? `<div style="font-size:11.5px;color:var(--text-3);margin:4px 0 0 62px;font-style:italic">${esc(f.rationale)}</div>` : ''}
+      ${f.remediation ? `
+        <details style="margin:6px 0 0 62px">
+          <summary style="font-size:11.5px;color:var(--accent2);cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+            <span class="cc-chevron" style="display:inline-block;transition:transform .15s">▸</span> Suggested fix
+          </summary>
+          <div style="font-size:12.5px;line-height:1.6;color:var(--text-2);margin-top:6px;padding:9px 11px;background:var(--surface2);border-radius:6px;white-space:pre-wrap">${esc(f.remediation)}</div>
+        </details>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// Streams /api/compliance/report as a blob and triggers a browser download — no re-analysis,
+// just formats the already-fetched result (_ccLastResult) into a PDF server-side.
+async function ccDownloadPdf() {
+  if (!_ccLastResult) return;
+  try {
+    const r = await fetch(`${API}/api/compliance/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(_ccLastResult)
+    });
+    if (!r.ok) { toast('✗ Failed to generate PDF report', 'var(--red)'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'compliance-report.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    toast('✗ Failed to generate PDF report', 'var(--red)');
+  }
+}
+
+function ccOnFileChosen(event, kind) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (kind === 'reg') {
+    _ccRegFile = file;
+    document.getElementById('ccRegFileName').textContent = `✓ ${file.name}`;
+  } else {
+    _ccPolicyFile = file;
+    document.getElementById('ccPolicyFileName').textContent = `✓ ${file.name}`;
+  }
+}
+
+async function ccCheckCompliance() {
+  const btn     = document.getElementById('ccCheckBtn');
+  const status  = document.getElementById('ccStatus');
+  const results = document.getElementById('ccResults');
+
+  if (!_ccRegFile || !_ccPolicyFile) {
+    status.textContent = 'Please upload both a regulation PDF and a policy PDF first.';
+    return;
+  }
+
+  btn.disabled = true;
+  results.style.display = 'none';
+  results.innerHTML = '';
+  status.textContent = 'Reading PDFs and asking the AI to compare them — this may take a moment…';
+
+  try {
+    const fd = new FormData();
+    fd.append('regulation', _ccRegFile);
+    fd.append('policy', _ccPolicyFile);
+
+    const r = await fetch(`${API}/api/compliance/check`, { method: 'POST', body: fd });
+    const d = await r.json();
+
+    if (!d.ok) {
+      status.textContent = '';
+      results.style.display = 'flex';
+      results.innerHTML = `<div class="ask-error">✗ ${esc(d.error || 'Compliance check failed.')}</div>`;
+      return;
+    }
+
+    status.textContent = '';
+    results.style.display = 'flex';
+    const sw = d.supersessionWarning;
+    const supersessionBannerHtml = sw ? `
+      <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);border-radius:var(--r);padding:14px;display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:16px;line-height:1.3">⚠️</span>
+        <div style="font-size:13px;line-height:1.6;color:var(--text)">
+          This check was run against <strong>${esc(sw.regulationTitle)}</strong>, but that regulation has since been superseded by
+          <strong>${esc(sw.supersededBy.title)}</strong>${sw.supersededBy.date ? ` (${esc(sw.supersededBy.date)})` : ''}.
+          Results below may not reflect current requirements.
+        </div>
+      </div>` : '';
+    const compliantHtml = (Array.isArray(d.compliant) && d.compliant.length)
+      ? d.compliant.map(s => `<div style="font-size:13px;line-height:1.65;color:var(--text);padding:3px 0">• ${esc(s)}</div>`).join('')
+      : `<div style="font-size:13px;color:var(--text-3)">—</div>`;
+
+    _ccLastResult = d; // kept for the PDF export button
+    results.innerHTML = `
+      ${supersessionBannerHtml}
+      <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:var(--r);padding:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#22c55e;margin-bottom:8px">✓ Compliant</div>
+        ${compliantHtml}
+      </div>
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:var(--r);padding:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#ef4444;margin-bottom:8px">✗ Non-Compliant</div>
+        ${ccRenderFindings(d.nonCompliant)}
+      </div>
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--r);padding:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#f59e0b;margin-bottom:8px">⚠ Missing</div>
+        ${ccRenderFindings(d.missing)}
+      </div>
+      <button class="btn small secondary" onclick="ccDownloadPdf()">⬇ Download PDF Report</button>`;
+  } catch (e) {
+    status.textContent = '';
+    results.style.display = 'flex';
+    results.innerHTML = `<div class="ask-error">✗ Request failed — is the server running?</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Document Validity Checker ───────────────────────────────────────────────────
+let _vcUploadFile = null;
+let _vcSearchTimer = null;
+let _vcCurrentId   = null;   // id of the document whose result is currently shown (for the Stage-2 button)
+
+function vcSearchDocuments() {
+  clearTimeout(_vcSearchTimer);
+  const term = document.getElementById('vcSearchInput').value.trim();
+  const resultsEl = document.getElementById('vcSearchResults');
+  if (!term) { resultsEl.style.display = 'none'; resultsEl.innerHTML = ''; return; }
+
+  _vcSearchTimer = setTimeout(async () => {
+    const d = await fetch(`${API}/api/items?keywords=${encodeURIComponent(term)}&limit=8`).then(r => r.json());
+    if (!d.items || !d.items.length) {
+      resultsEl.style.display = 'block';
+      resultsEl.innerHTML = `<div style="font-size:12px;color:var(--text-3);padding:6px 2px">No matches</div>`;
+      return;
+    }
+    resultsEl.style.display = 'flex';
+    resultsEl.innerHTML = d.items.map(it => `
+      <button class="btn small secondary" style="width:100%;text-align:left;white-space:normal"
+              onclick='vcSelectExistingDocument(${JSON.stringify(it.id)})'>
+        ${esc(it.title.slice(0, 90))} <span style="color:var(--text-3);font-size:11px">— ${esc(it.source)} · ${esc(it.dateFormatted || it.date || '')}</span>
+      </button>`).join('');
+  }, 280);
+}
+
+async function vcSelectExistingDocument(id) {
+  document.getElementById('vcSearchResults').style.display = 'none';
+  document.getElementById('vcSearchInput').value = '';
+  const status = document.getElementById('vcStatus');
+  status.textContent = 'Loading…';
+  document.getElementById('vcResult').innerHTML = '';
+  try {
+    const d = await fetch(`${API}/api/validity/${id}`).then(r => r.json());
+    status.textContent = '';
+    if (!d.ok) { document.getElementById('vcResult').innerHTML = `<div class="ask-error">✗ ${esc(d.error)}</div>`; return; }
+    vcRenderResult(d);
+  } catch (e) {
+    status.textContent = '';
+    document.getElementById('vcResult').innerHTML = `<div class="ask-error">✗ Request failed — is the server running?</div>`;
+  }
+}
+
+function vcOnFileChosen(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  _vcUploadFile = file;
+  document.getElementById('vcFileName').textContent = `✓ ${file.name}`;
+  document.getElementById('vcUploadMeta').style.display = 'flex';
+}
+
+async function vcUploadAndCheck() {
+  const btn    = document.getElementById('vcUploadBtn');
+  const status = document.getElementById('vcStatus');
+  const title  = document.getElementById('vcUploadTitle').value.trim();
+  const source = document.getElementById('vcUploadSource').value;
+  const date   = document.getElementById('vcUploadDate').value.trim();
+
+  if (!_vcUploadFile) { status.textContent = 'Choose a PDF first.'; return; }
+  if (!title)  { status.textContent = 'Enter a document title.'; return; }
+  if (!source) { status.textContent = 'Select a source.'; return; }
+  if (!date)   { status.textContent = 'Enter a date.'; return; }
+
+  btn.disabled = true;
+  document.getElementById('vcResult').innerHTML = '';
+  status.textContent = 'Reading PDF and checking for repeal/supersession references…';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', _vcUploadFile);
+    fd.append('title', title);
+    fd.append('source', source);
+    fd.append('date', date);
+
+    const d = await fetch(`${API}/api/validity/upload`, { method: 'POST', body: fd }).then(r => r.json());
+    status.textContent = '';
+    if (!d.ok) { document.getElementById('vcResult').innerHTML = `<div class="ask-error">✗ ${esc(d.error)}</div>`; return; }
+    vcRenderResult(d);
+    toast('Document uploaded and checked');
+  } catch (e) {
+    status.textContent = '';
+    document.getElementById('vcResult').innerHTML = `<div class="ask-error">✗ Request failed — is the server running?</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function vcCheckContent(btn) {
+  if (!_vcCurrentId) return;
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Checking… (this calls Claude, may take a moment)';
+  try {
+    const d = await fetch(`${API}/api/validity/${_vcCurrentId}/check-content`, { method: 'POST' }).then(r => r.json());
+    if (!d.ok) { toast(`✗ ${d.error}`, 'var(--red)'); btn.disabled = false; btn.textContent = original; return; }
+    vcRenderResult({ ok: true, id: _vcCurrentId, supersession: d.supersession, refInfo: null, repeals: [], title: null });
+  } catch (e) {
+    toast('✗ Request failed', 'var(--red)');
+    btn.disabled = false; btn.textContent = original;
+  }
+}
+
+const VC_STATUS_META = {
+  // Genuinely checked, nothing found on either path — the only state that earns green.
+  active:              { label: 'Active',                 color: '#22c55e', bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.3)'  },
+  superseded:          { label: 'Superseded',              color: '#ef4444', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.3)'  },
+  possibly_superseded: { label: 'Possibly Superseded',      color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)' },
+  // Stage 1 found nothing but Stage 2 hasn't run yet — not a positive determination, so
+  // neutral/grey rather than green (which would read as "confirmed good").
+  not_yet_verified:    { label: 'Not Yet Verified',        color: 'var(--text-3)', bg: 'var(--surface2)', border: 'var(--border)'      },
+  unknown:             { label: 'Unable to Determine',      color: 'var(--text-3)', bg: 'var(--surface2)', border: 'var(--border)'      }
+};
+
+function vcRenderResult(d) {
+  _vcCurrentId = d.id;
+  const sup  = d.supersession || { status: 'not_yet_verified', supersededBy: null, stage2Attempted: false };
+  const meta = VC_STATUS_META[sup.status] || VC_STATUS_META.unknown;
+
+  const supersededByHtml = sup.supersededBy ? (() => {
+    const sb = sup.supersededBy;
+    const srcClass = (sb.source || '').toLowerCase();
+    const titleHtml = sb.url
+      ? `<a href="${esc(sb.url)}" target="_blank" rel="noopener" style="color:#1d4ed8;font-size:14px;font-weight:500;text-decoration:none;line-height:1.4">${esc(sb.title)}</a>`
+      : `<span style="font-size:14px;font-weight:500;color:var(--text);line-height:1.4">${esc(sb.title)}</span>`;
+    const noLinkNote = !sb.url
+      ? `<div style="font-size:11px;color:var(--text-3);margin-top:2px;font-style:italic">Manually uploaded — no source link available</div>`
+      : '';
+    return `
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid ${meta.border}">
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:6px">Superseded by</div>
+      <div style="margin-bottom:4px">${titleHtml}</div>
+      ${noLinkNote}
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ${sb.source ? `<span class="badge ${srcClass}">${esc(sb.source)}</span>` : ''}
+        ${sb.type ? `<span class="badge type">${esc(sb.type)}</span>` : ''}
+        ${sb.date ? `<span class="item-date">📅 ${esc(sb.date)}</span>` : ''}
+      </div>
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span class="badge kw">${sb.mechanism === 'explicit_reference' ? 'Explicit reference' : 'Content match'}</span>
+        ${sb.confidence ? `<span class="badge kw">${esc(sb.confidence)} confidence</span>` : ''}
+      </div>
+      ${sb.citation ? `
+        <div style="margin-top:8px;font-size:12px;color:var(--text-2);line-height:1.6">
+          <div><strong>Old section:</strong> ${esc(sb.citation.oldSection || '—')}</div>
+          <div><strong>New section:</strong> ${esc(sb.citation.newSection || '—')}</div>
+        </div>` : ''}
+    </div>`;
+  })() : '';
+
+  const stage2Button = (sup.status !== 'superseded' && !sup.stage2Attempted)
+    ? `<button class="btn small secondary" style="margin-top:12px" onclick="vcCheckContent(this)">Check for content-based supersession</button>`
+    : '';
+
+  document.getElementById('vcResult').innerHTML = `
+    <div style="background:${meta.bg};border:1px solid ${meta.border};border-radius:var(--r);padding:14px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:${meta.color}">${meta.label}</span>
+      </div>
+      ${supersededByHtml}
+      ${stage2Button}
+    </div>`;
+}
+</script>
+</body>
+</html>
