@@ -46,6 +46,11 @@ const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const APP_URL = process.env.APP_URL ||
   (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`);
 
+// Set to 'true' on memory-constrained deployments (e.g. Render free tier) serving a fixed
+// demo corpus — skips the startup scrape, the periodic 2-hourly scrape, and the post-boot
+// chunk/reference backfill jobs entirely. Unset (default) preserves normal local-dev behavior.
+const SKIP_STARTUP_SCRAPE = process.env.SKIP_STARTUP_SCRAPE === 'true';
+
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DEFAULT_KEYWORDS = [
@@ -65,7 +70,7 @@ function defaultConfig() {
   };
 }
 
-function readStore()  { try { return JSON.parse(fs.readFileSync(DATA_FILE,   'utf8')); } catch { return defaultStore();  } }
+function readStore()  { try { return JSON.parse(fs.readFileSync(DATA_FILE,   'utf8')); } catch (e) { console.error('readStore: falling back to an empty store —', e.message); return defaultStore();  } }
 function writeStore(d)  { fs.writeFileSync(DATA_FILE,   JSON.stringify(d, null, 2)); }
 function readConfig() { try { return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch { return defaultConfig(); } }
 function writeConfig(c) { fs.writeFileSync(CONFIG_FILE, JSON.stringify(c, null, 2)); }
@@ -3671,14 +3676,21 @@ app.get('/api/stats', (req, res) => {
 });
 
 // ─── Cron: every 2 hours ──────────────────────────────────────────────────────
-cron.schedule('0 */2 * * *', () => runScrape().catch(console.error));
+cron.schedule('0 */2 * * *', () => {
+  if (SKIP_STARTUP_SCRAPE) return;
+  runScrape().catch(console.error);
+});
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`Regulatory Monitor → http://localhost:${PORT}`);
-  setTimeout(() => runScrape(true).catch(console.error), 2000);
-  // Re-process pre-existing documents into RAG chunks in the background, in small batches
-  scheduleChunkBackfill(20000);
-  // Re-process pre-existing documents for Document Validity Checker reference data
-  scheduleReferenceBackfill(25000);
+  if (SKIP_STARTUP_SCRAPE) {
+    console.log('SKIP_STARTUP_SCRAPE=true — serving the existing store as-is; no startup scrape, periodic scrape, or backfill jobs will run.');
+  } else {
+    setTimeout(() => runScrape(true).catch(console.error), 2000);
+    // Re-process pre-existing documents into RAG chunks in the background, in small batches
+    scheduleChunkBackfill(20000);
+    // Re-process pre-existing documents for Document Validity Checker reference data
+    scheduleReferenceBackfill(25000);
+  }
 });
