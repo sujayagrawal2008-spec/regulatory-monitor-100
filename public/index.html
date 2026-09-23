@@ -1489,10 +1489,10 @@ function applyScrapeDisabledUI(lastScrapedIso) {
   if (!btn) return;
   const dateStr = lastScrapedIso
     ? new Date(lastScrapedIso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    : 'recently';
+    : 'its last refresh';
   const note = document.createElement('span');
   note.style.cssText = 'font-size:11.5px;color:var(--muted)';
-  note.textContent = `Live scraping is disabled in this hosted demo — corpus last refreshed ${dateStr}`;
+  note.textContent = `Corpus current as of ${dateStr}`;
   btn.replaceWith(note);
 }
 
