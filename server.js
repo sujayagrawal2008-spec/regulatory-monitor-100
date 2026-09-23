@@ -51,6 +51,11 @@ const APP_URL = process.env.APP_URL ||
 // chunk/reference backfill jobs entirely. Unset (default) preserves normal local-dev behavior.
 const SKIP_STARTUP_SCRAPE = process.env.SKIP_STARTUP_SCRAPE === 'true';
 
+// Set to 'true' on the public demo deployment to remove the per-subscriber "Send test"
+// action entirely — both the button (frontend) and the endpoint itself (backend, in case
+// someone hits it directly). Unset (default) preserves normal local-dev behavior.
+const EMAIL_TEST_DISABLED = process.env.EMAIL_TEST_DISABLED === 'true';
+
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DEFAULT_KEYWORDS = [
@@ -1860,7 +1865,7 @@ app.get('/api/config', (req, res) => {
   const cfg = readConfig();
   const em  = getEmailConfig();
   // Never send the real password to the frontend — show masked value if set
-  res.json({ ...cfg, email: { ...em, pass: em.pass ? '••••••' : '' } });
+  res.json({ ...cfg, email: { ...em, pass: em.pass ? '••••••' : '' }, emailTestDisabled: EMAIL_TEST_DISABLED });
 });
 
 // PUT config
@@ -2045,6 +2050,9 @@ app.post('/api/subscribers/:id/test-real-match', async (req, res) => {
 // POST subscribers/:id/test — sends a sample digest (up to 3 real stored items, or a
 // placeholder if none exist yet). Does not touch sentItemIds — a test send is not a real alert.
 app.post('/api/subscribers/:id/test', async (req, res) => {
+  if (EMAIL_TEST_DISABLED) {
+    return res.status(403).json({ ok: false, error: 'Test emails are disabled on this deployment' });
+  }
   const cfg = readConfig();
   const sub = (cfg.subscribers || []).find(s => s.id === req.params.id);
   if (!sub) return res.status(404).json({ ok: false, error: 'Subscriber not found' });

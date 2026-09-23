@@ -1255,6 +1255,7 @@ let searchText       = '';
 let searchTimer      = null;
 let subscribers      = [];     // [{id,email,keywords,description,enabled,sentItemIds}, …]
 let newSubKws        = [];     // temp keyword list for the "new subscriber" form
+let emailTestDisabled = false; // set from /api/config — hides "Send test" on the demo deployment
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 function esc(s) {
@@ -1295,6 +1296,7 @@ function toast(msg, color) {
 async function fetchConfig() {
   const d = await fetch(`${API}/api/config`).then(r => r.json());
   keywords = d.keywords || [];
+  emailTestDisabled = !!d.emailTestDisabled;
 
   document.getElementById('emailEnabled').checked  = d.email.enabled;
   document.getElementById('emailHost').value        = d.email.host  || '';
@@ -1358,7 +1360,7 @@ function renderSubscriberGrid() {
             <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSubscriber('${s.id}', this.checked)">
             <span class="slider"></span>
           </label>
-          <button class="btn small secondary" onclick="sendSubscriberTest('${s.id}', this)">Send test</button>
+          ${emailTestDisabled ? '' : `<button class="btn small secondary" onclick="sendSubscriberTest('${s.id}', this)">Send test</button>`}
           <button class="btn small secondary" onclick="removeSubscriber('${s.id}')">✕ Remove</button>
         </div>
       </div>
