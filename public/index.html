@@ -938,7 +938,7 @@
 
 
     <!-- Scrape log -->
-    <div class="sidebar-section">
+    <div class="sidebar-section" id="activityPanel">
       <h3>Activity</h3>
       <div class="log-list" id="scrapeLog" aria-live="polite" aria-label="Recent scrape activity">
         <div style="color:var(--text-3);font-size:12px">No activity yet</div>
@@ -1299,6 +1299,14 @@ async function fetchConfig() {
   keywords = d.keywords || [];
   emailTestDisabled = !!d.emailTestDisabled;
   scrapeDisabled = !!d.scrapeDisabled;
+  if (scrapeDisabled) {
+    // Activity logs runs made by THIS server process — on the demo deployment the corpus
+    // was refreshed locally and redeployed as a static file, so this process genuinely has
+    // no run history even though the data is current. Showing "No scrapes yet" here would
+    // contradict the "Corpus current as of ..." note, so remove the panel outright.
+    const panel = document.getElementById('activityPanel');
+    if (panel) panel.remove();
+  }
 
   document.getElementById('emailEnabled').checked  = d.email.enabled;
   document.getElementById('emailHost').value        = d.email.host  || '';
@@ -1497,8 +1505,9 @@ function applyScrapeDisabledUI(lastScrapedIso) {
 }
 
 async function fetchLog() {
-  const d = await fetch(`${API}/api/log`).then(r => r.json());
   const el = document.getElementById('scrapeLog');
+  if (!el) return; // Activity panel removed entirely when SCRAPE_DISABLED is true
+  const d = await fetch(`${API}/api/log`).then(r => r.json());
   if (!d.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">No scrapes yet…</div>'; return; }
   el.innerHTML = d.slice(0,5).map(e => `
     <div class="log-entry">
