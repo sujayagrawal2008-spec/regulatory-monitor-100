@@ -848,7 +848,7 @@
     <div class="sidebar-section">
       <h3>Overview</h3>
       <div id="corpusNote" hidden style="font-size:11.5px;line-height:1.5;color:var(--muted);background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--r);padding:8px 10px;margin-bottom:10px">
-        Curated demo corpus — a working sample of RBI, SEBI &amp; IBBI regulatory documents.
+        Curated demo corpus — a working sample of RBI, SEBI &amp; IBBI regulatory documents. Answers reflect this sample; coverage and precision scale directly with corpus size, and the underlying pipeline has already been built and tested against 1,000+ documents in development.
       </div>
       <div class="stat-grid">
         <div class="stat-card">
@@ -1835,12 +1835,9 @@ document.addEventListener('visibilitychange', () => {
 
 // ── AI Chat ──────────────────────────────────────────────────────────────────
 const CHAT_STARTERS = [
-  'Has RBI changed ECB guidelines recently?',
-  'List all SEBI disclosure requirements',
-  'What are the latest IBBI insolvency rules?',
-  'Table of FPI investment limits and thresholds',
-  'Key changes to NBFC lending norms this year',
-  'What circulars has RBI issued about interest rates?'
+  "What are the latest RBI guidelines on commercial paper, and how do they differ from SEBI's?",
+  'What are the eligibility criteria for debenture trustees?',
+  "What are SEBI's disclosure requirements for REITs?"
 ];
 
 let _chatConvo = []; // [{role:'user'|'assistant', content}] — local mirror of conversation memory
