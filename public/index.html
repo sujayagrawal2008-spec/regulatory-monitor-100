@@ -1256,6 +1256,7 @@ let searchTimer      = null;
 let subscribers      = [];     // [{id,email,keywords,description,enabled,sentItemIds}, …]
 let newSubKws        = [];     // temp keyword list for the "new subscriber" form
 let emailTestDisabled = false; // set from /api/config — hides "Send test" on the demo deployment
+let scrapeDisabled    = false; // set from /api/config — hides "Scrape Now" on the demo deployment
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 function esc(s) {
@@ -1297,6 +1298,7 @@ async function fetchConfig() {
   const d = await fetch(`${API}/api/config`).then(r => r.json());
   keywords = d.keywords || [];
   emailTestDisabled = !!d.emailTestDisabled;
+  scrapeDisabled = !!d.scrapeDisabled;
 
   document.getElementById('emailEnabled').checked  = d.email.enabled;
   document.getElementById('emailHost').value        = d.email.host  || '';
@@ -1475,6 +1477,23 @@ async function fetchStats() {
   // A small, deliberately-trimmed corpus (like the Render demo deployment) reads as an
   // incomplete scrape unless labeled — a full scraped corpus doesn't need this framing.
   document.getElementById('corpusNote').hidden = d.total > 200;
+  applyScrapeDisabledUI(d.lastScraped);
+}
+
+// Replaces the "Scrape Now" button with a short note on deployments where live scraping
+// is disabled. Idempotent — safe to call on every refresh, since after the first call the
+// button no longer exists and this becomes a no-op.
+function applyScrapeDisabledUI(lastScrapedIso) {
+  if (!scrapeDisabled) return;
+  const btn = document.getElementById('scrapeBtn');
+  if (!btn) return;
+  const dateStr = lastScrapedIso
+    ? new Date(lastScrapedIso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : 'recently';
+  const note = document.createElement('span');
+  note.style.cssText = 'font-size:11.5px;color:var(--muted)';
+  note.textContent = `Live scraping is disabled in this hosted demo — corpus last refreshed ${dateStr}`;
+  btn.replaceWith(note);
 }
 
 async function fetchLog() {

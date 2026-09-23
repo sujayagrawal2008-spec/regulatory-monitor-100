@@ -56,6 +56,11 @@ const SKIP_STARTUP_SCRAPE = process.env.SKIP_STARTUP_SCRAPE === 'true';
 // someone hits it directly). Unset (default) preserves normal local-dev behavior.
 const EMAIL_TEST_DISABLED = process.env.EMAIL_TEST_DISABLED === 'true';
 
+// Set to 'true' on the public demo deployment to remove the "Scrape Now" action entirely --
+// both the button (frontend, replaced with a note) and the endpoint itself (backend, in case
+// someone hits it directly). Unset (default) preserves normal local-dev behavior.
+const SCRAPE_DISABLED = process.env.SCRAPE_DISABLED === 'true';
+
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DEFAULT_KEYWORDS = [
@@ -1865,7 +1870,7 @@ app.get('/api/config', (req, res) => {
   const cfg = readConfig();
   const em  = getEmailConfig();
   // Never send the real password to the frontend — show masked value if set
-  res.json({ ...cfg, email: { ...em, pass: em.pass ? '••••••' : '' }, emailTestDisabled: EMAIL_TEST_DISABLED });
+  res.json({ ...cfg, email: { ...em, pass: em.pass ? '••••••' : '' }, emailTestDisabled: EMAIL_TEST_DISABLED, scrapeDisabled: SCRAPE_DISABLED });
 });
 
 // PUT config
@@ -1884,6 +1889,9 @@ app.put('/api/config', (req, res) => {
 
 // POST manual scrape
 app.post('/api/scrape', (req, res) => {
+  if (SCRAPE_DISABLED) {
+    return res.status(403).json({ ok: false, error: 'Live scraping is disabled on this deployment' });
+  }
   res.json({ ok: true });
   runScrape(true).catch(console.error);
 });
